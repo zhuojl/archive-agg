@@ -1,8 +1,8 @@
-package com.zhuojl.share.proxy.config;
+package com.zhuojl.share.compose.config;
 
-import com.zhuojl.share.proxy.annotation.EnableAutoSharding;
-import com.zhuojl.share.proxy.annotation.ShardingClient;
-import com.zhuojl.share.proxy.common.exception.MyRuntimeException;
+import com.zhuojl.share.compose.annotation.EnableAutoCompose;
+import com.zhuojl.share.compose.annotation.ComposeMark;
+import com.zhuojl.share.compose.common.exception.MyRuntimeException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -30,7 +30,7 @@ import java.util.Set;
  * @author zhuojl
  */
 @Slf4j
-public class ShardingClientsRegistrar implements ImportBeanDefinitionRegistrar, ResourceLoaderAware, EnvironmentAware {
+public class ComposerRegistrar implements ImportBeanDefinitionRegistrar, ResourceLoaderAware, EnvironmentAware {
     private ResourceLoader resourceLoader;
 
     private Environment environment;
@@ -42,7 +42,7 @@ public class ShardingClientsRegistrar implements ImportBeanDefinitionRegistrar, 
         scanner.setResourceLoader(this.resourceLoader);
 
         Set<String> basePackages = parsePackages(metadata);
-        scanner.addIncludeFilter(new AnnotationTypeFilter(ShardingClient.class));
+        scanner.addIncludeFilter(new AnnotationTypeFilter(ComposeMark.class));
 
 
         for (String basePackage : basePackages) {
@@ -55,7 +55,7 @@ public class ShardingClientsRegistrar implements ImportBeanDefinitionRegistrar, 
                     Assert.isTrue(annotationMetadata.isInterface(), "can only be specified on an interface");
 
                     BeanDefinitionBuilder definitionBuilder = BeanDefinitionBuilder
-                            .genericBeanDefinition(ShardingClientFactory.class);
+                            .genericBeanDefinition(ComposeAbleFactory.class);
                     String className = annotationMetadata.getClassName();
 
                     definitionBuilder.setAutowireMode(AbstractBeanDefinition.AUTOWIRE_BY_TYPE);
@@ -66,6 +66,7 @@ public class ShardingClientsRegistrar implements ImportBeanDefinitionRegistrar, 
                         log.error("ClassNotFoundException :{}", className, e);
                         throw new MyRuntimeException("ClassNotFoundException");
                     }
+                    // XXX 通过setPrimary 让应用能够方便autowire
                     beanDefinition.setPrimary(true);
                     beanDefinitionRegistry.registerBeanDefinition(className, beanDefinition);
                 }
@@ -75,7 +76,7 @@ public class ShardingClientsRegistrar implements ImportBeanDefinitionRegistrar, 
 
     private Set<String> parsePackages(AnnotationMetadata metadata) {
         Map<String, Object> attributes = metadata
-                .getAnnotationAttributes(EnableAutoSharding.class.getCanonicalName());
+                .getAnnotationAttributes(EnableAutoCompose.class.getCanonicalName());
 
         Set<String> basePackages = new HashSet<>();
         for (String pkg : (String[]) attributes.get("value")) {

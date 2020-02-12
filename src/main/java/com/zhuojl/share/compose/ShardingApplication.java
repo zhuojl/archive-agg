@@ -1,7 +1,7 @@
-package com.zhuojl.share.proxy;
+package com.zhuojl.share.compose;
 
 
-import com.zhuojl.share.proxy.annotation.EnableAutoSharding;
+import com.zhuojl.share.compose.annotation.EnableAutoCompose;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
@@ -10,7 +10,7 @@ import org.springframework.cache.annotation.EnableCaching;
  * @author zhuojl
  */
 @SpringBootApplication
-@EnableAutoSharding("com.zhuojl.share.proxy.service")
+@EnableAutoCompose("com.zhuojl.share.compose.demo")
 @EnableCaching
 public class ShardingApplication {
 

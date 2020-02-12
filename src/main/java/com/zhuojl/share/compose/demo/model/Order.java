@@ -1,4 +1,4 @@
-package com.zhuojl.share.proxy.model;
+package com.zhuojl.share.compose.demo.model;
 
 import lombok.Builder;
 import lombok.Data;

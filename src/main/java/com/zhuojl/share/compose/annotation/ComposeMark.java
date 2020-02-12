@@ -1,9 +1,9 @@
-package com.zhuojl.share.proxy.annotation;
+package com.zhuojl.share.compose.annotation;
 
 import java.lang.annotation.*;
 
 /**
- * 标记需要代理的类
+ * 标记需要组合的类
  *
  * @author zhuojl
  */
@@ -11,5 +11,5 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
-public @interface ShardingClient {
+public @interface ComposeMark {
 }

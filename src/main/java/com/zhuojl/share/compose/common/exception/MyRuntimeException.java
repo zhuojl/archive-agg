@@ -1,4 +1,4 @@
-package com.zhuojl.share.proxy.common.exception;
+package com.zhuojl.share.compose.common.exception;
 
 public class MyRuntimeException extends RuntimeException {
 
