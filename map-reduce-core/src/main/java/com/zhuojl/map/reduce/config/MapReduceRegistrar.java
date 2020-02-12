@@ -3,7 +3,7 @@ package com.zhuojl.map.reduce.config;
 import com.zhuojl.map.reduce.annotation.EnableAutoMapReduce;
 import com.zhuojl.map.reduce.annotation.MapReduce;
 import com.zhuojl.map.reduce.common.exception.MyRuntimeException;
-import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
@@ -23,6 +23,8 @@ import org.springframework.util.StringUtils;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 代理客户端注册
