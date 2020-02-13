@@ -3,7 +3,6 @@ package com.zhuojl.map.reduce.config;
 import com.zhuojl.map.reduce.ArchiveKey;
 import com.zhuojl.map.reduce.ArchiveKeyResolver;
 import com.zhuojl.map.reduce.MapReduceAble;
-import com.zhuojl.map.reduce.ParamWithArchiveKey;
 import com.zhuojl.map.reduce.annotation.MapReduceMethodConfig;
 import com.zhuojl.map.reduce.common.exception.MyRuntimeException;
 import com.zhuojl.map.reduce.reduce.Reducer;
@@ -52,7 +51,7 @@ public class MapReduceProxy implements InvocationHandler {
 
             ArchiveKeyResolver archiveKeyResolver = map.get(sharding.paramHandler());
             // 参数拆取
-            ParamWithArchiveKey<ArchiveKey> originalParamWithArchiveKey = archiveKeyResolver.extract(args);
+            ArchiveKey queryArchiveKey = archiveKeyResolver.extract(args);
 
             String resultReducerBeanName = Strings.isBlank(sharding.reduceBeanName()) ?
                     Reducer.DefaultReducer.BEAN_NAME : sharding.reduceBeanName();
@@ -63,22 +62,18 @@ public class MapReduceProxy implements InvocationHandler {
             Object result = list.stream()
                     .filter(item -> {
                         // 多次执行会导致参数被变更，用原始参数重置参数
-                        archiveKeyResolver.rebuild(originalParamWithArchiveKey);
-                        ParamWithArchiveKey<ArchiveKey> composeParam;
-                        ArchiveKey archiveKey;
+                        archiveKeyResolver.rebuild(queryArchiveKey, args);
+                        ArchiveKey archiveKey = archiveKeyResolver.extract(args);
 
-                        if (Objects.isNull(composeParam = archiveKeyResolver.extract(args))
-                                || Objects.isNull(archiveKey = composeParam.getArchiveKey())) {
+                        if (Objects.isNull(archiveKey)) {
                             return false;
                         }
                         return !Objects.isNull(((MapReduceAble) item).intersectionArchiveKey(archiveKey));
                     })
                     .map(item -> {
                         // XXX 如果需要并发执行，需要clone，再根据配置的线程池或者默认线程池进行异步处理
-                        ParamWithArchiveKey<ArchiveKey> composeParam = archiveKeyResolver.extract(args);
-                        ArchiveKey archiveKey = ((MapReduceAble) item).intersectionArchiveKey(composeParam.getArchiveKey());
-                        composeParam.setArchiveKey(archiveKey);
-                        Object[] params = (Object[]) archiveKeyResolver.rebuild(composeParam);
+                        ArchiveKey archiveKey = ((MapReduceAble) item).intersectionArchiveKey(archiveKeyResolver.extract(args));
+                        Object[] params = (Object[]) archiveKeyResolver.rebuild(archiveKey, args);
                         try {
                             return method.invoke(item, params);
                         } catch (IllegalAccessException e) {
@@ -94,7 +89,7 @@ public class MapReduceProxy implements InvocationHandler {
                     .orElse(null);
 
             // 参数重置
-            archiveKeyResolver.rebuild(originalParamWithArchiveKey);
+            archiveKeyResolver.rebuild(queryArchiveKey, args);
             return result;
         } catch (Exception e) {
             log.error("sth error", e);

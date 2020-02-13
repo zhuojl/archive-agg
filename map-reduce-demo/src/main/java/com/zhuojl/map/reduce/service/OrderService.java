@@ -5,7 +5,6 @@ import com.google.common.collect.Range;
 import com.zhuojl.map.reduce.ArchiveKeyResolver;
 import com.zhuojl.map.reduce.MapReduceAble;
 import com.zhuojl.map.reduce.OrderArchiveKey;
-import com.zhuojl.map.reduce.ParamWithArchiveKey;
 import com.zhuojl.map.reduce.annotation.MapReduce;
 import com.zhuojl.map.reduce.annotation.MapReduceMethodConfig;
 import com.zhuojl.map.reduce.dto.OrderQueryDTO;
@@ -80,22 +79,20 @@ public interface OrderService extends MapReduceAble<OrderArchiveKey> {
     @Component(SIMPLE_HANDLER)
     class CustomArchiveKeyResolver implements ArchiveKeyResolver<OrderArchiveKey> {
         @Override
-        public ParamWithArchiveKey<OrderArchiveKey> extract(Object... params) {
+        public OrderArchiveKey extract(Object... params) {
 
-            Range<Integer> range = Range.closed(Integer.valueOf(String.valueOf(params[1])), Integer.valueOf(String.valueOf(params[2])));
+            Range<Integer> range = Range.closed(Integer.valueOf(String.valueOf(params[1])),
+                    Integer.valueOf(String.valueOf(params[2])));
 
-            return ParamWithArchiveKey.<OrderArchiveKey>builder()
-                    .originalParams(params)
-                    .archiveKey(new OrderArchiveKey(range))
-                    .build();
+            return new OrderArchiveKey(range);
 
         }
 
         @Override
-        public Object rebuild(ParamWithArchiveKey<OrderArchiveKey> paramWithArchiveKey) {
-            paramWithArchiveKey.getOriginalParams()[1] = paramWithArchiveKey.getArchiveKey().getRange().lowerEndpoint();
-            paramWithArchiveKey.getOriginalParams()[2] = paramWithArchiveKey.getArchiveKey().getRange().upperEndpoint();
-            return paramWithArchiveKey.getOriginalParams();
+        public Object rebuild(OrderArchiveKey archiveKey, Object... params) {
+            params[1] = archiveKey.getRange().lowerEndpoint();
+            params[2] = archiveKey.getRange().upperEndpoint();
+            return params;
         }
     }
 
@@ -105,20 +102,17 @@ public interface OrderService extends MapReduceAble<OrderArchiveKey> {
     @Component(ORDER_QUERY_HANDLER)
     class OrderQueryDTOCustomParamHandler implements ArchiveKeyResolver<OrderArchiveKey> {
         @Override
-        public ParamWithArchiveKey<OrderArchiveKey> extract(Object... params) {
+        public OrderArchiveKey extract(Object... params) {
             OrderQueryDTO orderQueryDTO = (OrderQueryDTO) params[0];
-            return ParamWithArchiveKey.<OrderArchiveKey>builder()
-                    .originalParams(params)
-                    .archiveKey(new OrderArchiveKey(Range.closed(orderQueryDTO.getLow(), orderQueryDTO.getHigh())))
-                    .build();
+            return new OrderArchiveKey(Range.closed(orderQueryDTO.getLow(), orderQueryDTO.getHigh()));
         }
 
         @Override
-        public Object rebuild(ParamWithArchiveKey<OrderArchiveKey> paramWithArchiveKey) {
-            OrderQueryDTO orderQueryDTO = (OrderQueryDTO) paramWithArchiveKey.getOriginalParams()[0];
-            orderQueryDTO.setLow(paramWithArchiveKey.getArchiveKey().getRange().lowerEndpoint());
-            orderQueryDTO.setHigh(paramWithArchiveKey.getArchiveKey().getRange().upperEndpoint());
-            return paramWithArchiveKey.getOriginalParams();
+        public Object rebuild(OrderArchiveKey archiveKey, Object... params) {
+            OrderQueryDTO orderQueryDTO = (OrderQueryDTO) params[0];
+            orderQueryDTO.setLow(archiveKey.getRange().lowerEndpoint());
+            orderQueryDTO.setHigh(archiveKey.getRange().upperEndpoint());
+            return params;
         }
     }
 
