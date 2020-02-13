@@ -21,11 +21,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MapReduceProxy implements InvocationHandler {
 
-    private final List list;
+    private final List<MapReduceAble> list;
     private final Map<String, ArchiveKeyResolver> map;
     private final Map<String, Reducer> reduceMap;
 
-    public MapReduceProxy(List list, Map<String, ArchiveKeyResolver> map, Map<String, Reducer> reduceMap) {
+    public MapReduceProxy(List<MapReduceAble> list, Map<String, ArchiveKeyResolver> map, Map<String, Reducer> reduceMap) {
         this.list = list;
         this.map = map;
         this.reduceMap = reduceMap;
@@ -47,54 +47,48 @@ public class MapReduceProxy implements InvocationHandler {
         }
 
         log.info("invoke class: {}, method: {}", proxy.getClass().getSimpleName(), method.getName());
-        try {
 
-            ArchiveKeyResolver archiveKeyResolver = map.get(sharding.paramHandler());
-            // 参数拆取
-            ArchiveKey queryArchiveKey = archiveKeyResolver.extract(args);
+        ArchiveKeyResolver archiveKeyResolver = map.get(sharding.paramHandler());
+        ArchiveKey originalArchiveKey = archiveKeyResolver.extract(args);
+        Reducer reducer = getReducer(sharding);
 
-            String resultReducerBeanName = Strings.isBlank(sharding.reduceBeanName()) ?
-                    Reducer.DefaultReducer.BEAN_NAME : sharding.reduceBeanName();
+        return list.stream()
+                .map(item -> {
 
-            Reducer reducer = reduceMap.get(resultReducerBeanName);
-            Objects.requireNonNull(reducer);
+                    ArchiveKey intersectionArchiveKey = item.intersectionArchiveKey(archiveKeyResolver.extract(args));
+                    if (Objects.isNull(intersectionArchiveKey)) {
+                        return null;
+                    }
 
-            Object result = list.stream()
-                    .filter(item -> {
-                        // 多次执行会导致参数被变更，用原始参数重置参数
-                        archiveKeyResolver.rebuild(queryArchiveKey, args);
-                        ArchiveKey archiveKey = archiveKeyResolver.extract(args);
+                    // 根据归档键 交集 重构 方法参数
+                    Object[] params = (Object[]) archiveKeyResolver.rebuild(intersectionArchiveKey, args);
+                    try {
+                        Object result = method.invoke(item, params);
 
-                        if (Objects.isNull(archiveKey)) {
-                            return false;
-                        }
-                        return !Objects.isNull(((MapReduceAble) item).intersectionArchiveKey(archiveKey));
-                    })
-                    .map(item -> {
-                        // XXX 如果需要并发执行，需要clone，再根据配置的线程池或者默认线程池进行异步处理
-                        ArchiveKey archiveKey = ((MapReduceAble) item).intersectionArchiveKey(archiveKeyResolver.extract(args));
-                        Object[] params = (Object[]) archiveKeyResolver.rebuild(archiveKey, args);
-                        try {
-                            return method.invoke(item, params);
-                        } catch (IllegalAccessException e) {
-                            log.error("IllegalAccessException ", e);
-                            throw new MyRuntimeException("c");
-                        } catch (InvocationTargetException e) {
-                            log.error("InvocationTargetException", e);
-                            throw new MyRuntimeException("d");
-                        }
-                    })
-                    .filter(Objects::nonNull)
-                    .reduce((obj1, obj2) -> reducer.reduce(obj1, obj2))
-                    .orElse(null);
+                        // 根据 原始归档键 重构 方法参数
+                        archiveKeyResolver.rebuild(originalArchiveKey, args);
+                        return result;
+                    } catch (IllegalAccessException e) {
+                        log.error("IllegalAccessException ", e);
+                        throw new MyRuntimeException("c");
+                    } catch (InvocationTargetException e) {
+                        log.error("InvocationTargetException", e);
+                        throw new MyRuntimeException("d");
+                    }
 
-            // 参数重置
-            archiveKeyResolver.rebuild(queryArchiveKey, args);
-            return result;
-        } catch (Exception e) {
-            log.error("sth error", e);
-            throw new MyRuntimeException("f");
-        }
+                })
+                .filter(Objects::nonNull)
+                .reduce((obj1, obj2) -> reducer.reduce(obj1, obj2))
+                .orElse(null);
+    }
+
+    private Reducer getReducer(MapReduceMethodConfig sharding) {
+        String resultReducerBeanName = Strings.isBlank(sharding.reduceBeanName()) ?
+                Reducer.DefaultReducer.BEAN_NAME : sharding.reduceBeanName();
+
+        Reducer reducer = reduceMap.get(resultReducerBeanName);
+        Objects.requireNonNull(reducer);
+        return reducer;
     }
 
 }

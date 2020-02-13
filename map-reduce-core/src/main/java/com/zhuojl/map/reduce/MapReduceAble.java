@@ -14,13 +14,6 @@ public interface MapReduceAble<K extends ArchiveKey> {
      */
     K getArchiveKey();
 
-//    /**
-//     * 每个实现的归档键与查询归档键求交集
-//     * @param queryArchiveKey 具体方法查询时的 归档键
-//     * @return 一个新的归档参数和归档配置
-//     */
-//    K intersectionArchiveKey(K queryArchiveKey);
-
     /**
      * 每个实现的归档键与查询归档键求交集
      */
