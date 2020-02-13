@@ -1,6 +1,6 @@
 package com.zhuojl.map.reduce.config;
 
-import com.zhuojl.map.reduce.ComposeParamHandler;
+import com.zhuojl.map.reduce.ArchiveKeyResolver;
 import com.zhuojl.map.reduce.reduce.Reducer;
 
 import org.springframework.beans.factory.BeanClassLoaderAware;
@@ -34,7 +34,7 @@ public class MapReduceFactory implements FactoryBean, BeanClassLoaderAware, Appl
     public Object getObject() {
         String[] testInterfaces = applicationContext.getBeanNamesForType(type);
 
-        Map<String, ComposeParamHandler> map = applicationContext.getBeansOfType(ComposeParamHandler.class);
+        Map<String, ArchiveKeyResolver> map = applicationContext.getBeansOfType(ArchiveKeyResolver.class);
         Map<String, Reducer> reduceMap = applicationContext.getBeansOfType(Reducer.class);
         List list = Arrays.stream(testInterfaces)
                 .filter(beanName -> !beanName.equals(type.getName()))

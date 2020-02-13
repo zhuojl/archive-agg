@@ -3,10 +3,11 @@ package com.zhuojl.map.reduce.service;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 
-import com.zhuojl.map.reduce.model.GroupBySth;
-import com.zhuojl.map.reduce.model.OrderStatistic;
+import com.zhuojl.map.reduce.OrderArchiveKey;
 import com.zhuojl.map.reduce.dto.OrderQueryDTO;
+import com.zhuojl.map.reduce.model.GroupBySth;
 import com.zhuojl.map.reduce.model.Order;
+import com.zhuojl.map.reduce.model.OrderStatistic;
 
 import org.springframework.stereotype.Service;
 
@@ -25,10 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 public class MySqlOrderServiceImpl implements OrderService {
 
     @Override
-    public OrderServiceComposeConfig getComposeConfig() {
-        OrderServiceComposeConfig composeConfig = new OrderServiceComposeConfig();
-        composeConfig.setConfigRange(Range.closed(4, 7));
-        return composeConfig;
+    public OrderArchiveKey getArchiveKey() {
+        return new OrderArchiveKey(Range.closed(4, 7));
     }
 
     @Override

@@ -3,6 +3,7 @@ package com.zhuojl.map.reduce.service;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 
+import com.zhuojl.map.reduce.OrderArchiveKey;
 import com.zhuojl.map.reduce.model.GroupBySth;
 import com.zhuojl.map.reduce.model.OrderStatistic;
 import com.zhuojl.map.reduce.dto.OrderQueryDTO;
@@ -24,13 +25,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MongoOrderServiceImpl implements OrderService {
 
-
-
     @Override
-    public OrderServiceComposeConfig getComposeConfig() {
-        OrderServiceComposeConfig composeConfig = new OrderServiceComposeConfig();
-        composeConfig.setConfigRange(Range.closed(1, 3));
-        return composeConfig;
+    public OrderArchiveKey getArchiveKey() {
+        return new OrderArchiveKey(Range.closed(1, 3));
     }
 
     @Override

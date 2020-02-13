@@ -2,9 +2,10 @@ package com.zhuojl.map.reduce.service;
 
 import com.google.common.collect.Range;
 
+import com.zhuojl.map.reduce.ArchiveKeyResolver;
 import com.zhuojl.map.reduce.MapReduceAble;
-import com.zhuojl.map.reduce.ComposeParam;
-import com.zhuojl.map.reduce.ComposeParamHandler;
+import com.zhuojl.map.reduce.OrderArchiveKey;
+import com.zhuojl.map.reduce.ParamWithArchiveKey;
 import com.zhuojl.map.reduce.annotation.MapReduce;
 import com.zhuojl.map.reduce.annotation.MapReduceMethodConfig;
 import com.zhuojl.map.reduce.dto.OrderQueryDTO;
@@ -16,27 +17,16 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-
 /**
  * 订单逻辑
  *
  * @author zhuojl
  */
 @MapReduce
-public interface OrderService extends MapReduceAble<OrderService.OrderServiceComposeParam> {
+public interface OrderService extends MapReduceAble<OrderArchiveKey> {
 
-    String SIMPLE_HANDLER = "orderService.SimpleParamHandler.simple";
+    String SIMPLE_HANDLER = "orderService.CustomArchiveKeyResolver";
     String ORDER_QUERY_HANDLER = "orderService.ObjectParamHandler.OrderQueryDTO";
-
-    /**
-     * 每个实现都需要一个判断分段 getExecuteParam,
-     *
-     * 这里有个问题，同样归档规则的业务有很多，不可能每一个都在实现类里配置配置一下，
-     */
-    OrderServiceComposeConfig getComposeConfig();
 
 
     /**
@@ -53,14 +43,14 @@ public interface OrderService extends MapReduceAble<OrderService.OrderServiceCom
     List<Order> listByDTO(OrderQueryDTO orderQueryDTO);
 
 
-     /**
+    /**
      * 根据创建人查询订单，从实体对象中获取参数
      */
     @MapReduceMethodConfig(paramHandler = ORDER_QUERY_HANDLER)
     Integer getOrderCount(OrderQueryDTO orderQueryDTO);
 
 
-     /**
+    /**
      * 检测ForceReduceAble
      */
     @MapReduceMethodConfig(paramHandler = ORDER_QUERY_HANDLER)
@@ -74,90 +64,61 @@ public interface OrderService extends MapReduceAble<OrderService.OrderServiceCom
     List<GroupBySth> listGroupBy(OrderQueryDTO orderQueryDTO);
 
 
-
     /**
      * 获取段 的执行参数 在这个实现中是通过与getComposeConfig配置做交集
-     * @param originalParam
-     * @return
      */
     @Override
-    default OrderServiceComposeParam getExecuteParam(OrderServiceComposeParam originalParam) {
-        OrderServiceComposeConfig config = getComposeConfig();
-        if (!originalParam.getRange().isConnected(config.getConfigRange())) {
-            return null;
-        }
-        originalParam.setRange(originalParam.getRange().intersection(config.getConfigRange()));
-        return originalParam;
+    default OrderArchiveKey intersectionArchiveKey(OrderArchiveKey queryArchiveKey) {
+        // 获取当前实现类的归档配置
+        return getArchiveKey().intersection(queryArchiveKey);
     }
 
-    /**
-     * 区间配置
-     */
-    @Setter
-    @Getter
-    @ToString
-    class OrderServiceComposeConfig {
-        Range<Integer> configRange;
-    }
 
     /**
-     * 订单分段参数
-     */
-    @Setter
-    @Getter
-    @ToString
-    class OrderServiceComposeParam implements ComposeParam {
-        /**
-         * 原始参数
-         */
-        Object[] originalParams;
-        /**
-         * orderService 的 区间参数
-         */
-        Range<Integer> range;
-    }
-
-    /**
-     * 简单参数处理类
+     * 定制 简单参数处理类
      */
     @Component(SIMPLE_HANDLER)
-    class SimpleParamHandler implements ComposeParamHandler<OrderServiceComposeParam> {
+    class CustomArchiveKeyResolver implements ArchiveKeyResolver<OrderArchiveKey> {
         @Override
-        public OrderServiceComposeParam extract(Object... params) {
-            OrderServiceComposeParam composeParam = new OrderServiceComposeParam();
-            composeParam.setOriginalParams(params);
-            composeParam.setRange(Range.closed(Integer.valueOf(String.valueOf(params[1])), Integer.valueOf(String.valueOf(params[2]))));
-            return composeParam;
+        public ParamWithArchiveKey<OrderArchiveKey> extract(Object... params) {
+
+            Range<Integer> range = Range.closed(Integer.valueOf(String.valueOf(params[1])), Integer.valueOf(String.valueOf(params[2])));
+
+            return ParamWithArchiveKey.<OrderArchiveKey>builder()
+                    .originalParams(params)
+                    .archiveKey(new OrderArchiveKey(range))
+                    .build();
+
         }
 
         @Override
-        public Object rebuild(OrderServiceComposeParam composeParam) {
-            composeParam.getOriginalParams()[1] = composeParam.getRange().lowerEndpoint();
-            composeParam.getOriginalParams()[2] = composeParam.getRange().upperEndpoint();
-            return composeParam.getOriginalParams();
+        public Object rebuild(ParamWithArchiveKey<OrderArchiveKey> paramWithArchiveKey) {
+            paramWithArchiveKey.getOriginalParams()[1] = paramWithArchiveKey.getArchiveKey().getRange().lowerEndpoint();
+            paramWithArchiveKey.getOriginalParams()[2] = paramWithArchiveKey.getArchiveKey().getRange().upperEndpoint();
+            return paramWithArchiveKey.getOriginalParams();
         }
     }
 
     /**
-     * 实体参数处理
+     * 定制 实体参数处理
      */
     @Component(ORDER_QUERY_HANDLER)
-    class OrderQueryParamHandler implements ComposeParamHandler<OrderServiceComposeParam> {
+    class OrderQueryDTOCustomParamHandler implements ArchiveKeyResolver<OrderArchiveKey> {
         @Override
-        public OrderServiceComposeParam extract(Object... params) {
-            OrderServiceComposeParam composeParam = new OrderServiceComposeParam();
-            composeParam.setOriginalParams(params);
+        public ParamWithArchiveKey<OrderArchiveKey> extract(Object... params) {
             OrderQueryDTO orderQueryDTO = (OrderQueryDTO) params[0];
-            composeParam.setRange(Range.closed(orderQueryDTO.getLow(), orderQueryDTO.getHigh()));
-            return composeParam;
+            return ParamWithArchiveKey.<OrderArchiveKey>builder()
+                    .originalParams(params)
+                    .archiveKey(new OrderArchiveKey(Range.closed(orderQueryDTO.getLow(), orderQueryDTO.getHigh())))
+                    .build();
         }
 
         @Override
-        public Object rebuild(OrderServiceComposeParam composeParam) {
-            OrderQueryDTO orderQueryDTO = (OrderQueryDTO) composeParam.getOriginalParams()[0];
-            orderQueryDTO.setLow(composeParam.getRange().lowerEndpoint());
-            orderQueryDTO.setHigh(composeParam.getRange().upperEndpoint());
-            return composeParam.getOriginalParams();
+        public Object rebuild(ParamWithArchiveKey<OrderArchiveKey> paramWithArchiveKey) {
+            OrderQueryDTO orderQueryDTO = (OrderQueryDTO) paramWithArchiveKey.getOriginalParams()[0];
+            orderQueryDTO.setLow(paramWithArchiveKey.getArchiveKey().getRange().lowerEndpoint());
+            orderQueryDTO.setHigh(paramWithArchiveKey.getArchiveKey().getRange().upperEndpoint());
+            return paramWithArchiveKey.getOriginalParams();
         }
     }
 

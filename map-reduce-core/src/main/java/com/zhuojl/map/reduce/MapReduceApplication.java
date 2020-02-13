@@ -10,7 +10,7 @@ import org.springframework.cache.annotation.EnableCaching;
  * @author zhuojl
  */
 @SpringBootApplication
-@EnableAutoMapReduce("com.zhuojl.share.compose.demo")
+@EnableAutoMapReduce("com.zhuojl.map.reduce")
 @EnableCaching
 public class MapReduceApplication {
 

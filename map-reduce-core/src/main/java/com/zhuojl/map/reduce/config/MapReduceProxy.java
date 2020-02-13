@@ -1,8 +1,9 @@
 package com.zhuojl.map.reduce.config;
 
-import com.zhuojl.map.reduce.ComposeParam;
-import com.zhuojl.map.reduce.ComposeParamHandler;
+import com.zhuojl.map.reduce.ArchiveKey;
+import com.zhuojl.map.reduce.ArchiveKeyResolver;
 import com.zhuojl.map.reduce.MapReduceAble;
+import com.zhuojl.map.reduce.ParamWithArchiveKey;
 import com.zhuojl.map.reduce.annotation.MapReduceMethodConfig;
 import com.zhuojl.map.reduce.common.exception.MyRuntimeException;
 import com.zhuojl.map.reduce.reduce.Reducer;
@@ -22,10 +23,10 @@ import lombok.extern.slf4j.Slf4j;
 public class MapReduceProxy implements InvocationHandler {
 
     private final List list;
-    private final Map<String, ComposeParamHandler> map;
+    private final Map<String, ArchiveKeyResolver> map;
     private final Map<String, Reducer> reduceMap;
 
-    public MapReduceProxy(List list, Map<String, ComposeParamHandler> map, Map<String, Reducer> reduceMap) {
+    public MapReduceProxy(List list, Map<String, ArchiveKeyResolver> map, Map<String, Reducer> reduceMap) {
         this.list = list;
         this.map = map;
         this.reduceMap = reduceMap;
@@ -49,12 +50,12 @@ public class MapReduceProxy implements InvocationHandler {
         log.info("invoke class: {}, method: {}", proxy.getClass().getSimpleName(), method.getName());
         try {
 
-            ComposeParamHandler composeParamHandler = map.get(sharding.paramHandler());
+            ArchiveKeyResolver archiveKeyResolver = map.get(sharding.paramHandler());
             // 参数拆取
-            ComposeParam originalComposeParam = composeParamHandler.extract(args);
+            ParamWithArchiveKey<ArchiveKey> originalParamWithArchiveKey = archiveKeyResolver.extract(args);
 
-            String resultReducerBeanName = Strings.isBlank(sharding.reduceBeanName())?
-                    Reducer.DefaultReducer.BEAN_NAME: sharding.reduceBeanName();
+            String resultReducerBeanName = Strings.isBlank(sharding.reduceBeanName()) ?
+                    Reducer.DefaultReducer.BEAN_NAME : sharding.reduceBeanName();
 
             Reducer reducer = reduceMap.get(resultReducerBeanName);
             Objects.requireNonNull(reducer);
@@ -62,18 +63,22 @@ public class MapReduceProxy implements InvocationHandler {
             Object result = list.stream()
                     .filter(item -> {
                         // 多次执行会导致参数被变更，用原始参数重置参数
-                        composeParamHandler.rebuild(originalComposeParam);
-                        ComposeParam composeParam = composeParamHandler.extract(args);
-                        if (Objects.isNull(composeParam)) {
+                        archiveKeyResolver.rebuild(originalParamWithArchiveKey);
+                        ParamWithArchiveKey<ArchiveKey> composeParam;
+                        ArchiveKey archiveKey;
+
+                        if (Objects.isNull(composeParam = archiveKeyResolver.extract(args))
+                                || Objects.isNull(archiveKey = composeParam.getArchiveKey())) {
                             return false;
                         }
-                        return !Objects.isNull(((MapReduceAble) item).getExecuteParam(composeParam));
+                        return !Objects.isNull(((MapReduceAble) item).intersectionArchiveKey(archiveKey));
                     })
                     .map(item -> {
                         // XXX 如果需要并发执行，需要clone，再根据配置的线程池或者默认线程池进行异步处理
-                        ComposeParam composeParam = composeParamHandler.extract(args);
-                        ComposeParam executeParam = ((MapReduceAble) item).getExecuteParam(composeParam);
-                        Object[] params = (Object[]) composeParamHandler.rebuild(executeParam);
+                        ParamWithArchiveKey<ArchiveKey> composeParam = archiveKeyResolver.extract(args);
+                        ArchiveKey archiveKey = ((MapReduceAble) item).intersectionArchiveKey(composeParam.getArchiveKey());
+                        composeParam.setArchiveKey(archiveKey);
+                        Object[] params = (Object[]) archiveKeyResolver.rebuild(composeParam);
                         try {
                             return method.invoke(item, params);
                         } catch (IllegalAccessException e) {
@@ -85,11 +90,11 @@ public class MapReduceProxy implements InvocationHandler {
                         }
                     })
                     .filter(Objects::nonNull)
-                    .reduce((obj1, obj2) ->  reducer.reduce(obj1, obj2))
+                    .reduce((obj1, obj2) -> reducer.reduce(obj1, obj2))
                     .orElse(null);
 
             // 参数重置
-            composeParamHandler.rebuild(originalComposeParam);
+            archiveKeyResolver.rebuild(originalParamWithArchiveKey);
             return result;
         } catch (Exception e) {
             log.error("sth error", e);
