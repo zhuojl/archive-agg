@@ -1,4 +1,4 @@
-package com.zhuojl.map.reduce;
+package com.zhuojl.map.reduce.archivekey;
 
 /**
  * 组合执行参数处理器，作用是为在之前的应用场景中，每个分段的有数据重合，需要重组参数，避免查询到重复数据。

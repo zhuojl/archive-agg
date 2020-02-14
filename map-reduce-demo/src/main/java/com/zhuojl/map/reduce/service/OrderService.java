@@ -2,7 +2,7 @@ package com.zhuojl.map.reduce.service;
 
 import com.google.common.collect.Range;
 
-import com.zhuojl.map.reduce.ArchiveKeyResolver;
+import com.zhuojl.map.reduce.archivekey.ArchiveKeyResolver;
 import com.zhuojl.map.reduce.MapReduceAble;
 import com.zhuojl.map.reduce.OrderArchiveKey;
 import com.zhuojl.map.reduce.annotation.MapReduce;

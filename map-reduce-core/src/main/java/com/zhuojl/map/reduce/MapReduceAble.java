@@ -1,6 +1,8 @@
 package com.zhuojl.map.reduce;
 
 
+import com.zhuojl.map.reduce.archivekey.ArchiveKey;
+
 /**
  * 分片接口，
  * <p>

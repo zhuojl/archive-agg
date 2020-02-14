@@ -2,6 +2,8 @@ package com.zhuojl.map.reduce;
 
 import com.google.common.collect.Range;
 
+import com.zhuojl.map.reduce.archivekey.ArchiveKey;
+
 import java.util.Objects;
 
 import lombok.AllArgsConstructor;

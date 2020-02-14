@@ -1,7 +1,7 @@
 package com.zhuojl.map.reduce.config;
 
-import com.zhuojl.map.reduce.ArchiveKey;
-import com.zhuojl.map.reduce.ArchiveKeyResolver;
+import com.zhuojl.map.reduce.archivekey.ArchiveKey;
+import com.zhuojl.map.reduce.archivekey.ArchiveKeyResolver;
 import com.zhuojl.map.reduce.MapReduceAble;
 import com.zhuojl.map.reduce.annotation.MapReduceMethodConfig;
 import com.zhuojl.map.reduce.common.ArrayCloneUtil;

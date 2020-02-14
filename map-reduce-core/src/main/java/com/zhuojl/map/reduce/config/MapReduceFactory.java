@@ -1,6 +1,6 @@
 package com.zhuojl.map.reduce.config;
 
-import com.zhuojl.map.reduce.ArchiveKeyResolver;
+import com.zhuojl.map.reduce.archivekey.ArchiveKeyResolver;
 import com.zhuojl.map.reduce.reduce.Reducer;
 
 import org.springframework.beans.factory.BeanClassLoaderAware;
