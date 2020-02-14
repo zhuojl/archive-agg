@@ -1,6 +1,6 @@
 package com.zhuojl.map.reduce.model;
 
-import com.zhuojl.map.reduce.common.ReduceAble;
+import com.zhuojl.map.reduce.reduce.ReduceAble;
 
 import java.util.Objects;
 

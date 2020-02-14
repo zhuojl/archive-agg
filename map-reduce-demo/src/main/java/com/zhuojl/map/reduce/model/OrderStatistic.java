@@ -1,6 +1,6 @@
 package com.zhuojl.map.reduce.model;
 
-import com.zhuojl.map.reduce.common.ForceReduceAble;
+import com.zhuojl.map.reduce.reduce.ForceReduceAble;
 
 import java.util.Objects;
 

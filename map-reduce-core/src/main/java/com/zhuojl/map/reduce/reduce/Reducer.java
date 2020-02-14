@@ -1,8 +1,6 @@
 package com.zhuojl.map.reduce.reduce;
 
 import com.zhuojl.map.reduce.common.exception.MyRuntimeException;
-import com.zhuojl.map.reduce.common.ForceReduceAble;
-import com.zhuojl.map.reduce.common.ReduceAble;
 
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;

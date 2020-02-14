@@ -1,4 +1,4 @@
-package com.zhuojl.map.reduce.common;
+package com.zhuojl.map.reduce.reduce;
 
 /**
  * 可merge的,需要确保返回结果不为null，不然抛NPE

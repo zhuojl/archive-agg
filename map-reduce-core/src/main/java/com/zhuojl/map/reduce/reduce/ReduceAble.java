@@ -1,4 +1,4 @@
-package com.zhuojl.map.reduce.common;
+package com.zhuojl.map.reduce.reduce;
 
 /**
  * 可merge的
