@@ -89,7 +89,7 @@ public interface OrderService extends MapReduceAble<OrderArchiveKey> {
         }
 
         @Override
-        public Object rebuild(OrderArchiveKey archiveKey, Object... params) {
+        public Object[] rebuild(OrderArchiveKey archiveKey, Object... params) {
             params[1] = archiveKey.getRange().lowerEndpoint();
             params[2] = archiveKey.getRange().upperEndpoint();
             return params;
@@ -108,7 +108,7 @@ public interface OrderService extends MapReduceAble<OrderArchiveKey> {
         }
 
         @Override
-        public Object rebuild(OrderArchiveKey archiveKey, Object... params) {
+        public Object[] rebuild(OrderArchiveKey archiveKey, Object... params) {
             OrderQueryDTO orderQueryDTO = (OrderQueryDTO) params[0];
             orderQueryDTO.setLow(archiveKey.getRange().lowerEndpoint());
             orderQueryDTO.setHigh(archiveKey.getRange().upperEndpoint());

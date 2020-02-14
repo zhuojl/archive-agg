@@ -29,6 +29,8 @@ public @interface MapReduceMethodConfig {
      *
      * @return
      */
-    String reduceBeanName() default "";
+    String reducer() default "";
+
+
 
 }

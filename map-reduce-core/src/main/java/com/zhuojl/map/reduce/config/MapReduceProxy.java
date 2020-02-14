@@ -7,11 +7,13 @@ import com.zhuojl.map.reduce.annotation.MapReduceMethodConfig;
 import com.zhuojl.map.reduce.common.exception.MyRuntimeException;
 import com.zhuojl.map.reduce.reduce.Reducer;
 
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.logging.log4j.util.Strings;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -47,6 +49,10 @@ public class MapReduceProxy implements InvocationHandler {
         }
 
         log.info("invoke class: {}, method: {}", proxy.getClass().getSimpleName(), method.getName());
+        return executeByMapReduce(method, args, sharding);
+    }
+
+    private Object executeByMapReduce(Method method, Object[] args, MapReduceMethodConfig sharding) {
 
         ArchiveKeyResolver archiveKeyResolver = map.get(sharding.paramHandler());
         ArchiveKey originalArchiveKey = archiveKeyResolver.extract(args);
@@ -55,19 +61,15 @@ public class MapReduceProxy implements InvocationHandler {
         return list.stream()
                 .map(item -> {
 
-                    ArchiveKey intersectionArchiveKey = item.intersectionArchiveKey(archiveKeyResolver.extract(args));
+                    ArchiveKey intersectionArchiveKey = item.intersectionArchiveKey(originalArchiveKey);
                     if (Objects.isNull(intersectionArchiveKey)) {
                         return null;
                     }
 
                     // 根据归档键 交集 重构 方法参数
-                    Object[] params = (Object[]) archiveKeyResolver.rebuild(intersectionArchiveKey, args);
+                    Object[] params = archiveKeyResolver.rebuild(intersectionArchiveKey, cloneParams(args));
                     try {
-                        Object result = method.invoke(item, params);
-
-                        // 根据 原始归档键 重构 方法参数
-                        archiveKeyResolver.rebuild(originalArchiveKey, args);
-                        return result;
+                        return method.invoke(item, params);
                     } catch (IllegalAccessException e) {
                         log.error("IllegalAccessException ", e);
                         throw new MyRuntimeException("c");
@@ -82,9 +84,33 @@ public class MapReduceProxy implements InvocationHandler {
                 .orElse(null);
     }
 
+
+    private Object[] cloneParams(Object... params) {
+
+        Object[] arr = Arrays.copyOf(params, params.length);
+            try {
+                for (int i = 0; i < arr.length; i++) {
+                    arr[i] = BeanUtils.cloneBean(arr[i]);
+                }
+            } catch (IllegalAccessException e) {
+                log.error("IllegalAccessException ", e);
+                throw new MyRuntimeException("IllegalAccessException");
+            } catch (InstantiationException e) {
+                log.error("InstantiationException ", e);
+                throw new MyRuntimeException("InstantiationException");
+            } catch (InvocationTargetException e) {
+                log.error("InvocationTargetException ", e);
+                throw new MyRuntimeException("InvocationTargetException");
+            } catch (NoSuchMethodException e) {
+                log.error("NoSuchMethodException ", e);
+                throw new MyRuntimeException("NoSuchMethodException");
+            }
+        return arr;
+    }
+
     private Reducer getReducer(MapReduceMethodConfig sharding) {
-        String resultReducerBeanName = Strings.isBlank(sharding.reduceBeanName()) ?
-                Reducer.DefaultReducer.BEAN_NAME : sharding.reduceBeanName();
+        String resultReducerBeanName = Strings.isBlank(sharding.reducer()) ?
+                Reducer.DefaultReducer.BEAN_NAME : sharding.reducer();
 
         Reducer reducer = reduceMap.get(resultReducerBeanName);
         Objects.requireNonNull(reducer);

@@ -21,6 +21,6 @@ public interface ArchiveKeyResolver<K extends ArchiveKey> {
      * @param params 原始参数的clone？
      * @return
      */
-    Object rebuild(K archiveKey, Object... params);
+    Object[] rebuild(K archiveKey, Object... params);
 
 }
