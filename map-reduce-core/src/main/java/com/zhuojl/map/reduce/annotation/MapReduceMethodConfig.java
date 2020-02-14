@@ -2,6 +2,8 @@ package com.zhuojl.map.reduce.annotation;
 
 
 
+import com.zhuojl.map.reduce.common.enums.MapMode;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -19,6 +21,8 @@ import java.lang.annotation.Target;
 @Documented
 public @interface MapReduceMethodConfig {
 
+    MapMode mapMode() default MapMode.ALL;
+
     /**
      * 方法参数处理器 beanName
      * @return
@@ -30,7 +34,6 @@ public @interface MapReduceMethodConfig {
      * @return
      */
     String reducer() default "";
-
 
 
 }

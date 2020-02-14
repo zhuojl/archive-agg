@@ -38,7 +38,6 @@ public class OrderServiceTest {
     @Test
     public void testSingleParam() {
         OrderQueryDTO orderQueryDTO = getOrderQueryDTO();
-        orderQueryDTO.setCreator("zhuojl");
         List list2 = orderService.listByDTO(orderQueryDTO);
         Assert.assertEquals(2, orderQueryDTO.getLow().intValue());
         Assert.assertEquals(5, orderQueryDTO.getHigh().intValue());
@@ -51,7 +50,7 @@ public class OrderServiceTest {
     @Test
     public void testGetCount() {
         OrderQueryDTO orderQueryDTO = getOrderQueryDTO();
-        orderQueryDTO.setCreator("zhuojl");
+
         Integer count = orderService.getOrderCount(orderQueryDTO);
         Assert.assertEquals(2, orderQueryDTO.getLow().intValue());
         Assert.assertEquals(5, orderQueryDTO.getHigh().intValue());
@@ -63,7 +62,6 @@ public class OrderServiceTest {
     @Test
     public void testListGroupBy() {
         OrderQueryDTO orderQueryDTO = getOrderQueryDTO();
-        orderQueryDTO.setCreator("zhuojl");
         List<GroupBySth> list = orderService.listGroupBy(orderQueryDTO);
         Assert.assertEquals(3, list.size());
     }
@@ -72,17 +70,26 @@ public class OrderServiceTest {
     @Test
     public void testGetGroupBy() {
         OrderQueryDTO orderQueryDTO = getOrderQueryDTO();
-        orderQueryDTO.setCreator("zhuojl");
         OrderStatistic statistic = orderService.statistic(orderQueryDTO);
         Assert.assertEquals(4, statistic.getCount().intValue());
         Assert.assertEquals(3, statistic.getMoney().intValue());
     }
+
+    @Test
+    public void testFindFirst() {
+        OrderQueryDTO orderQueryDTO = getOrderQueryDTO();
+        OrderStatistic statistic = orderService.findFirst(orderQueryDTO);
+        Assert.assertEquals("mongo", statistic.getStatisticName());
+    }
+
+
 
 
     private OrderQueryDTO getOrderQueryDTO() {
         OrderQueryDTO orderQueryDTO = new OrderQueryDTO();
         orderQueryDTO.setLow(2);
         orderQueryDTO.setHigh(5);
+        orderQueryDTO.setCreator("zhuojl");
         return orderQueryDTO;
     }
 

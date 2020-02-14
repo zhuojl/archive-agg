@@ -28,7 +28,7 @@ public class MySqlOrderServiceImpl implements OrderService, Ordered {
 
     @Override
     public int getOrder() {
-        return 0;
+        return 1;
     }
 
     @Override
@@ -68,7 +68,7 @@ public class MySqlOrderServiceImpl implements OrderService, Ordered {
 
     @Override
     public OrderStatistic statistic(OrderQueryDTO orderQueryDTO) {
-        return new OrderStatistic("mysql demo", 2, 3);
+        return new OrderStatistic("mysql", 2, 3);
     }
 
     @Override
@@ -76,4 +76,9 @@ public class MySqlOrderServiceImpl implements OrderService, Ordered {
         return Lists.newArrayList(new GroupBySth(2, 2), new GroupBySth(3, 2));
     }
 
+    @Override
+    public OrderStatistic findFirst(OrderQueryDTO orderQueryDTO) {
+        log.info("return null although order is higher");
+        return null;
+    }
 }

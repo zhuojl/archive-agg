@@ -7,6 +7,7 @@ import com.zhuojl.map.reduce.MapReduceAble;
 import com.zhuojl.map.reduce.OrderArchiveKey;
 import com.zhuojl.map.reduce.annotation.MapReduce;
 import com.zhuojl.map.reduce.annotation.MapReduceMethodConfig;
+import com.zhuojl.map.reduce.common.enums.MapMode;
 import com.zhuojl.map.reduce.dto.OrderQueryDTO;
 import com.zhuojl.map.reduce.model.GroupBySth;
 import com.zhuojl.map.reduce.model.Order;
@@ -64,13 +65,11 @@ public interface OrderService extends MapReduceAble<OrderArchiveKey> {
 
 
     /**
-     * 获取段 的执行参数 在这个实现中是通过与getComposeConfig配置做交集
+     * 测试 find first 模式
      */
-    @Override
-    default OrderArchiveKey intersectionArchiveKey(OrderArchiveKey queryArchiveKey) {
-        // 获取当前实现类的归档配置
-        return getArchiveKey().intersection(queryArchiveKey);
-    }
+    @MapReduceMethodConfig(mapMode = MapMode.FIND_FIRST, paramHandler = ORDER_QUERY_HANDLER)
+    OrderStatistic findFirst(OrderQueryDTO orderQueryDTO);
+
 
 
     /**

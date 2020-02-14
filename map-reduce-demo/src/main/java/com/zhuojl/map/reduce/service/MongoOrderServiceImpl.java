@@ -63,11 +63,17 @@ public class MongoOrderServiceImpl implements OrderService {
 
     @Override
     public OrderStatistic statistic(OrderQueryDTO orderQueryDTO) {
-        return new OrderStatistic("mongo demo", 1, 1);
+        return new OrderStatistic("mongo", 1, 1);
     }
 
     @Override
     public List<GroupBySth> listGroupBy(OrderQueryDTO orderQueryDTO) {
         return Lists.newArrayList(new GroupBySth(2, 1), new GroupBySth(4, 2));
     }
+
+    @Override
+    public OrderStatistic findFirst(OrderQueryDTO orderQueryDTO) {
+        return new OrderStatistic("mongo", 1, 1);
+    }
+
 }
