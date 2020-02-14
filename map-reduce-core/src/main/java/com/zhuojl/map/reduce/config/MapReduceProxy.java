@@ -90,7 +90,12 @@ public class MapReduceProxy implements InvocationHandler {
         Object[] arr = Arrays.copyOf(params, params.length);
             try {
                 for (int i = 0; i < arr.length; i++) {
-                    arr[i] = BeanUtils.cloneBean(arr[i]);
+                    // 基本数据类型直接赋值
+                    if (skipClone(arr[i])) {
+                        arr[i] = params[i];
+                    } else {
+                        arr[i] = BeanUtils.cloneBean(arr[i]);
+                    }
                 }
             } catch (IllegalAccessException e) {
                 log.error("IllegalAccessException ", e);
@@ -106,6 +111,10 @@ public class MapReduceProxy implements InvocationHandler {
                 throw new MyRuntimeException("NoSuchMethodException");
             }
         return arr;
+    }
+
+    private boolean skipClone(Object o) {
+        return o instanceof Number || o instanceof Boolean || o instanceof Character;
     }
 
     private Reducer getReducer(MapReduceMethodConfig sharding) {

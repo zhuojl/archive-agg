@@ -7,6 +7,7 @@ import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.core.Ordered;
 
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
@@ -39,6 +40,19 @@ public class MapReduceFactory implements FactoryBean, BeanClassLoaderAware, Appl
         List list = Arrays.stream(testInterfaces)
                 .filter(beanName -> !beanName.equals(type.getName()))
                 .map(beanName -> applicationContext.getBean(beanName))
+                .sorted((o1, o2) -> {
+                    int order1 = 0;
+                    int order2 = 0;
+                    if (o1 instanceof Ordered) {
+                        order1 = ((Ordered) o1).getOrder();
+                    }
+                    if (o2 instanceof Ordered) {
+                        order2 = ((Ordered) o2).getOrder();
+                    }
+
+                    return order2 - order1;
+
+                })
                 .collect(Collectors.toList());
 
         MapReduceProxy mapReduceProxy = new MapReduceProxy(list, map, reduceMap);

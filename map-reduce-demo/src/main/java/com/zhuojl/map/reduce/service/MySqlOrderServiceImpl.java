@@ -9,6 +9,7 @@ import com.zhuojl.map.reduce.model.GroupBySth;
 import com.zhuojl.map.reduce.model.Order;
 import com.zhuojl.map.reduce.model.OrderStatistic;
 
+import org.springframework.core.Ordered;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -23,7 +24,12 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Service
 @Slf4j
-public class MySqlOrderServiceImpl implements OrderService {
+public class MySqlOrderServiceImpl implements OrderService, Ordered {
+
+    @Override
+    public int getOrder() {
+        return 0;
+    }
 
     @Override
     public OrderArchiveKey getArchiveKey() {
