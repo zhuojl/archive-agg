@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 
 import com.zhuojl.map.reduce.OrderArchiveKey;
+import com.zhuojl.map.reduce.dto.OrderPageDTO;
 import com.zhuojl.map.reduce.dto.OrderQueryDTO;
 import com.zhuojl.map.reduce.model.GroupBySth;
 import com.zhuojl.map.reduce.model.Order;
@@ -24,7 +25,9 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Service
 @Slf4j
-public class MySqlOrderServiceImpl implements OrderService, Ordered {
+public class MySqlOrderServiceImpl1 implements OrderService, Ordered {
+
+
 
     @Override
     public int getOrder() {
@@ -80,5 +83,29 @@ public class MySqlOrderServiceImpl implements OrderService, Ordered {
     public OrderStatistic findFirst(OrderQueryDTO orderQueryDTO) {
         log.info("return null although order is higher");
         return null;
+    }
+
+
+    @Override
+    public OrderPageDTO page(OrderPageDTO orderQueryDTO) {
+        OrderPageDTO orderPageDTO = new OrderPageDTO();
+
+        Range<Integer> intersection = getArchiveKey().getRange()
+                .intersection(Range.closed(orderQueryDTO.getLow(), orderQueryDTO.getHigh()));
+
+        List<String> list = new ArrayList<>();
+        int start = orderQueryDTO.getStart();
+        for (int i = intersection.upperEndpoint() - start; i >= intersection.lowerEndpoint() ; i-- ) {
+            list.add("order:" + getOrder() +", index:"+ i);
+        }
+        log.info("list:{}", list);
+        orderPageDTO.setData(list);
+        return orderPageDTO;
+    }
+
+    public Integer pageCount(OrderPageDTO orderQueryDTO) {
+        Range<Integer> intersection = getArchiveKey().getRange()
+                .intersection(Range.closed(orderQueryDTO.getLow(), orderQueryDTO.getHigh()));
+        return intersection.upperEndpoint() - intersection.lowerEndpoint() + 1;
     }
 }

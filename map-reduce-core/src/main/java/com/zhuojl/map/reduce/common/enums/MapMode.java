@@ -15,7 +15,12 @@ public enum MapMode {
     /**
      * 返回所有符合条件的分段，列表，汇总等
      */
-    ALL
+    ALL,
+
+    /**
+     * 分页模式
+     */
+    PAGE
 
 
 }

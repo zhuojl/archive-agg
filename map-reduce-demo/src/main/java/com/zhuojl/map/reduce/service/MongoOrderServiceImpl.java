@@ -4,10 +4,11 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 
 import com.zhuojl.map.reduce.OrderArchiveKey;
-import com.zhuojl.map.reduce.model.GroupBySth;
-import com.zhuojl.map.reduce.model.OrderStatistic;
+import com.zhuojl.map.reduce.dto.OrderPageDTO;
 import com.zhuojl.map.reduce.dto.OrderQueryDTO;
+import com.zhuojl.map.reduce.model.GroupBySth;
 import com.zhuojl.map.reduce.model.Order;
+import com.zhuojl.map.reduce.model.OrderStatistic;
 
 import org.springframework.stereotype.Service;
 
@@ -76,4 +77,9 @@ public class MongoOrderServiceImpl implements OrderService {
         return new OrderStatistic("mongo", 1, 1);
     }
 
+    @Override
+    public OrderPageDTO page(OrderPageDTO orderQueryDTO) {
+        log.info("this method may empty");
+        return null;
+    }
 }

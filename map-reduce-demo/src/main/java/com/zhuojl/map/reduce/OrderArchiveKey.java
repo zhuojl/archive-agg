@@ -27,6 +27,10 @@ public class OrderArchiveKey implements ArchiveKey<OrderArchiveKey> {
             return null;
         }
 
+        if (!range.isConnected(archiveKey.getRange())) {
+            return null;
+        }
+
         Range<Integer> intersection = this.range.intersection(archiveKey.getRange());
 
         return new OrderArchiveKey(intersection);

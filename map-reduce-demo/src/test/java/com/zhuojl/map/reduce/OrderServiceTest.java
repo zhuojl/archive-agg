@@ -1,5 +1,6 @@
 package com.zhuojl.map.reduce;
 
+import com.zhuojl.map.reduce.dto.OrderPageDTO;
 import com.zhuojl.map.reduce.dto.OrderQueryDTO;
 import com.zhuojl.map.reduce.model.GroupBySth;
 import com.zhuojl.map.reduce.model.OrderStatistic;
@@ -82,6 +83,29 @@ public class OrderServiceTest {
         Assert.assertEquals("mongo", statistic.getStatisticName());
     }
 
+
+
+    @Test
+    public void testPage() {
+        OrderPageDTO orderPageDTO = getOrderPageDTO();
+        orderPageDTO.setPageNumber(2);
+        orderPageDTO.setPageSize(3);
+        OrderPageDTO page = orderService.page(orderPageDTO);
+        System.out.println(page);
+        System.out.println(page.getData());
+    }
+
+
+
+
+
+    private OrderPageDTO getOrderPageDTO() {
+        OrderPageDTO orderQueryDTO = new OrderPageDTO();
+        orderQueryDTO.setLow(7);
+        orderQueryDTO.setHigh(15);
+
+        return orderQueryDTO;
+    }
 
 
 

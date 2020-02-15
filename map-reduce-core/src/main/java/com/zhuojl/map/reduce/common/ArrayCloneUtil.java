@@ -5,7 +5,6 @@ import com.zhuojl.map.reduce.common.exception.MyRuntimeException;
 import org.apache.commons.beanutils.BeanUtils;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,14 +13,14 @@ public class ArrayCloneUtil {
 
     public static Object[] cloneParams(Object... params) {
 
-        Object[] arr = Arrays.copyOf(params, params.length);
+        Object[] arr = new Object[params.length];
         try {
             for (int i = 0; i < arr.length; i++) {
                 // 基本数据类型直接赋值
                 if (skipClone(arr[i])) {
                     arr[i] = params[i];
                 } else {
-                    arr[i] = BeanUtils.cloneBean(arr[i]);
+                    arr[i] = BeanUtils.cloneBean(params[i]);
                 }
             }
         } catch (IllegalAccessException e) {

@@ -1,12 +1,14 @@
 package com.zhuojl.map.reduce.config;
 
-import com.zhuojl.map.reduce.archivekey.ArchiveKey;
-import com.zhuojl.map.reduce.archivekey.ArchiveKeyResolver;
 import com.zhuojl.map.reduce.MapReduceAble;
 import com.zhuojl.map.reduce.annotation.MapReduceMethodConfig;
+import com.zhuojl.map.reduce.archivekey.ArchiveKey;
+import com.zhuojl.map.reduce.archivekey.ArchiveKeyResolver;
 import com.zhuojl.map.reduce.common.ArrayCloneUtil;
+import com.zhuojl.map.reduce.common.MapReducePage;
 import com.zhuojl.map.reduce.common.enums.MapMode;
 import com.zhuojl.map.reduce.common.exception.MyRuntimeException;
+import com.zhuojl.map.reduce.reduce.ReduceAble;
 import com.zhuojl.map.reduce.reduce.Reducer;
 
 import org.apache.logging.log4j.util.Strings;
@@ -14,9 +16,11 @@ import org.apache.logging.log4j.util.Strings;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -61,7 +65,7 @@ public class MapReduceProxy implements InvocationHandler {
         if (MapMode.FIND_FIRST.equals(sharding.mapMode())) {
             return list.stream()
                     .map(item ->
-                        doExecute(method, args, archiveKeyResolver, originalArchiveKey, item)
+                            doExecute(method, ArrayCloneUtil.cloneParams(args), archiveKeyResolver, originalArchiveKey, item)
                     )
                     .filter(Objects::nonNull)
                     .findFirst()
@@ -71,26 +75,182 @@ public class MapReduceProxy implements InvocationHandler {
         if (MapMode.ALL.equals(sharding.mapMode())) {
             return list.stream()
                     .map(item ->
-                            doExecute(method, args, archiveKeyResolver, originalArchiveKey, item)
+                            doExecute(method, ArrayCloneUtil.cloneParams(args), archiveKeyResolver, originalArchiveKey, item)
                     )
                     .filter(Objects::nonNull)
                     .reduce((obj1, obj2) -> reducer.reduce(obj1, obj2))
                     .orElse(null);
         }
 
+        if (MapMode.PAGE.equals(sharding.mapMode())) {
+
+            MapReducePage mapReducePage = null;
+            for (Object obj : args) {
+                if (obj instanceof MapReducePage) {
+                    mapReducePage = (MapReducePage) obj;
+                }
+            }
+            Objects.requireNonNull(mapReducePage, "this must be not null");
+
+            // 便利执行 计数方法 返回 类全名，每区块计数器
+            Map<MapReduceAble, Integer> countMap = getCountMap(method, args, archiveKeyResolver, originalArchiveKey);
+
+            // 执行结果
+            Map<MapReduceAble, Object> resultMap = getResultMap(method, args, archiveKeyResolver, originalArchiveKey, mapReducePage, countMap);
+
+            return list.stream()
+                    .filter(item -> countMap.containsKey(item) && resultMap.containsKey(item))
+                    .map(item -> resultMap.get(item))
+                    .reduce((obj1, obj2) -> reducer.reduce(obj1, obj2))
+                    .orElse(null);
+        }
+
+
         throw new UnsupportedOperationException("sth wrong");
     }
 
+    private Map<MapReduceAble, Integer> getCountMap(Method method, Object[] args, ArchiveKeyResolver archiveKeyResolver, ArchiveKey originalArchiveKey) {
+        Map<MapReduceAble, Integer> countMap = new HashMap<>(list.size());
+        for (MapReduceAble item : list) {
+            // 类配置与 原始归档参数 求交集
+            ArchiveKey intersectionArchiveKey = item.intersectionArchiveKey(originalArchiveKey);
+            // 类配置是否和查询有交集
+            if (Objects.isNull(intersectionArchiveKey)) {
+                continue;
+            }
+            Method countMethod;
+            try {
+                countMethod = item.getClass().getMethod(method.getName() + "Count", method.getParameterTypes());
+            } catch (NoSuchMethodException e) {
+                log.error("NoSuchMethodException", e);
+                throw new MyRuntimeException("NoSuchMethodException");
+            }
+            Object count = invoke(countMethod, archiveKeyResolver, item, intersectionArchiveKey, ArrayCloneUtil.cloneParams(args));
+
+            countMap.put(item, Objects.isNull(count) ? 0 : (Integer) count);
+        }
+        return countMap;
+
+    }
+
+    private Map<MapReduceAble, Object> getResultMap(Method method, Object[] args,
+                                            ArchiveKeyResolver archiveKeyResolver,
+                                            ArchiveKey originalArchiveKey,
+                                            MapReducePage mapReducePage,
+                                            Map<MapReduceAble, Integer> countMap) {
+
+        Map<MapReduceAble, Object> map = new HashMap<>();
+
+        // adjust Page Params(start, limit)
+        MapReducePageAdjuster mapReducePageAdjuster = new MapReducePageAdjuster(mapReducePage);
+
+        for (MapReduceAble mapReduceAble : list) {
+            // 类配置与 原始归档参数 求交集
+            ArchiveKey intersectionArchiveKey = mapReduceAble.intersectionArchiveKey(originalArchiveKey);
+            // 类配置是否和查询有交集
+            if (Objects.isNull(intersectionArchiveKey)) {
+                continue;
+            }
+
+            Object[] clonedParams = mapReducePageAdjuster.adjustParam(countMap.get(mapReduceAble), args);
+
+            if (Objects.isNull(clonedParams)) {
+                continue;
+            }
+            Object result = invoke(method, archiveKeyResolver, mapReduceAble, intersectionArchiveKey, clonedParams);
+            map.put(mapReduceAble, result);
+        }
+
+        return map;
+    }
+
+
+    private class MapReduceContext {
+
+    }
+
+    private class MapReducePageAdjuster {
+
+        private MapReducePageAdjuster(MapReducePage originalPage) {
+            Objects.requireNonNull(originalPage);
+            this.originalPage = originalPage;
+            this.originalPageSize = originalPage.getPageSize();
+            this.originalPageNumber = originalPage.getPageNumber();
+            this.originalStart = originalPage.getStart();
+            this.originalLimit = originalPage.getLimit();
+            this.startIndex = (this.originalPageNumber - 1) * this.originalPageSize;
+
+        }
+
+        private final MapReducePage originalPage;
+        private final int originalPageSize;
+        private final int originalPageNumber;
+        private final int originalStart;
+        private final int originalLimit;
+        private final Integer startIndex;
+        // 占用的数量
+        Integer usedCount = 0;
+        // 便利完的数字
+        Integer passedCount = 0;
+
+
+        /**
+         * 通过clone改过分页属性的MapReducePage，来返回需要的参数
+         *
+         * 依此传入0，6，0，6，6，0，6 的数量队列，每页10个，取第二页，则取0，0，0，2（后2），6，0，2（前2）
+         *
+         * @param count 每段的数量
+         */
+        private Object[] adjustParam(Integer count, Object[] originalParams) {
+            if (Objects.isNull(count) || count == 0) {
+                return null;
+            }
+
+
+            // 表示抽取的数量已经 和 一页的大小相同
+            if (usedCount == originalPageSize ||
+                    // 未达到 起始取值点
+                    (passedCount += count) <= startIndex) {
+                return null;
+            }
+
+            /* 按上面的例子来说，第二个6时，6 <（2-1）*10-0, return null，passedCount +=6 = 6;
+                到第4个6时，6 > (2-1）*10-6，继续执行, passedCount +=6 = 12;
+             */
+
+            // 只有第一个区间的开始不是0，其他区间的开始都是0
+            if (usedCount == 0) {
+                // 开始的位置，那上面的例子来说， 就是第二个6的的第5个 (10 - 12 + 6)
+                originalPage.setStart(startIndex - passedCount + count);
+            } else {
+                originalPage.setStart(0);
+            }
+            // 实际只取了start 到总数末尾那么多个，即 count - start；并且不能大于剩余的需求，虽然大于也无所谓，但是这样 计算used就会有问题
+            originalPage.setLimit(Math.min(count - originalPage.getStart(), originalPageSize - usedCount));
+
+            usedCount += originalPage.getLimit();
+
+            Object[] clonedParams = ArrayCloneUtil.cloneParams(originalParams);
+            // 恢复参数设置
+            originalPage.setStart(this.originalStart);
+            originalPage.setLimit(this.originalLimit);
+
+            return clonedParams;
+        }
+
+
+    }
+
+
     /**
      * 执行请求
-     * @param method
-     * @param originalArgs 原始参数
+     *
+     * @param executedParams     原始参数
      * @param archiveKeyResolver 归档参数处理器
      * @param originalArchiveKey 原始归档参数
-     * @param target  invoke 的 target
-     * @return
+     * @param target             invoke 的 target
      */
-    private Object doExecute(Method method, Object[] originalArgs,
+    private Object doExecute(Method method, Object[] executedParams,
                              ArchiveKeyResolver archiveKeyResolver,
                              ArchiveKey originalArchiveKey,
                              MapReduceAble target) {
@@ -103,9 +263,17 @@ public class MapReduceProxy implements InvocationHandler {
         }
 
         // 根据归档键 交集 重构 方法参数
-        Object[] params = archiveKeyResolver.rebuild(intersectionArchiveKey, ArrayCloneUtil.cloneParams(originalArgs));
+        return invoke(method, archiveKeyResolver, target, intersectionArchiveKey, executedParams);
+    }
+
+
+    private Object invoke(Method method, ArchiveKeyResolver archiveKeyResolver,
+                          MapReduceAble mapReduceAble, ArchiveKey intersectionArchiveKey,
+                          Object[] clonedParams) {
+        // 根据归档键 交集 重构 方法参数
+        Object[] params = archiveKeyResolver.rebuild(intersectionArchiveKey, clonedParams);
         try {
-            return method.invoke(target, params);
+            return method.invoke(mapReduceAble, params);
         } catch (IllegalAccessException e) {
             log.error("IllegalAccessException ", e);
             throw new MyRuntimeException("c");

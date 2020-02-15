@@ -1,5 +1,6 @@
 package com.zhuojl.map.reduce.reduce;
 
+import com.zhuojl.map.reduce.common.MapReducePage;
 import com.zhuojl.map.reduce.common.exception.MyRuntimeException;
 
 import org.springframework.stereotype.Component;
@@ -45,12 +46,21 @@ public interface Reducer<T> {
                 return (T) t;
             }
 
+            if (t1 instanceof MapReducePage) {
+                return (T)mergeMapReducePage((MapReducePage)t1,(MapReducePage)t2);
+            }
+
             if (t1 instanceof List) {
 
                 return (T) reduceList((List) t1, (List) t2);
             }
 
             throw new MyRuntimeException("do sth");
+        }
+
+        private MapReducePage mergeMapReducePage(MapReducePage t1, MapReducePage t2) {
+            t1.setData(reduceList(t1.getData(), t2.getData()));
+            return t1;
         }
 
         private List reduceList(List list1, List list2) {
