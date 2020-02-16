@@ -169,7 +169,7 @@ public class MapReduceProxy implements InvocationHandler {
                                                     MapReducePage mapReducePage,
                                                     Map<MapReduceAble, Integer> countMap) {
 
-        Map<MapReduceAble, Object> map = new HashMap<>();
+        Map<MapReduceAble, Object> resultMap = new HashMap<>();
 
         // adjust Page Params(start, limit)
         MapReducePageAdjuster mapReducePageAdjuster = new MapReducePageAdjuster(mapReducePage);
@@ -182,10 +182,10 @@ public class MapReduceProxy implements InvocationHandler {
                 continue;
             }
             Object result = doExecute(method, mapReduceAble, adjustParam);
-            map.put(mapReduceAble, result);
+            resultMap.put(mapReduceAble, result);
         }
 
-        return map;
+        return resultMap;
     }
 
 

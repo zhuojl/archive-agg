@@ -58,7 +58,7 @@ public class Page<T> {
 
     public int getLimit() {
 
-        return pageSize;
+        return getPageSize();
     }
 
 }

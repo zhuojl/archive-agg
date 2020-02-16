@@ -47,17 +47,14 @@ public class MapReducePageAdjuster {
             return null;
         }
 
+        passedCount += count;
 
         // 表示抽取的数量已经 和 一页的大小相同
         if (usedCount == originalPageSize ||
                 // 未达到 起始取值点
-                (passedCount += count) <= startIndex) {
+                passedCount <= startIndex) {
             return null;
         }
-
-            /* 按上面的例子来说，第二个6时，6 <（2-1）*10-0, return null，passedCount +=6 = 6;
-                到第4个6时，6 > (2-1）*10-6，继续执行, passedCount +=6 = 12;
-             */
 
         // 只有第一个区间的开始不是0，其他区间的开始都是0
         if (usedCount == 0) {

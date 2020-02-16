@@ -26,6 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MongoOrderServiceImpl implements OrderService {
 
+    public static final String NAME = "mongo";
+
     @Override
     public SystemArchiveKey getArchiveKey() {
         return new SystemArchiveKey(Range.closed(1, 3));
@@ -64,7 +66,7 @@ public class MongoOrderServiceImpl implements OrderService {
 
     @Override
     public OrderStatistic statistic(OrderQueryDTO orderQueryDTO) {
-        return new OrderStatistic("mongo", 1, 1);
+        return new OrderStatistic(NAME, 1, 1);
     }
 
     @Override
@@ -74,7 +76,7 @@ public class MongoOrderServiceImpl implements OrderService {
 
     @Override
     public OrderStatistic findFirst(OrderQueryDTO orderQueryDTO) {
-        return new OrderStatistic("mongo", 1, 1);
+        return new OrderStatistic(NAME, 1, 1);
     }
 
     @Override
@@ -89,7 +91,7 @@ public class MongoOrderServiceImpl implements OrderService {
         for (int i = intersection.upperEndpoint() - start; i >= intersection.lowerEndpoint(); i--) {
             list.add("index:" + i);
         }
-        log.info("order:{}, list:{}", "mongo", list);
+        log.info("order:{}, list:{}", NAME, list);
         orderPageDTO.setData(list);
         return orderPageDTO;
     }

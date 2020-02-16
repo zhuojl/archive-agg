@@ -77,8 +77,7 @@ public interface Reducer<T> {
             if (list1.get(0) instanceof ReduceAble) {
 
                 List<ReduceAble> reduceAbleList = (List<ReduceAble>) list1;
-                List<ReduceAble> list =
-                        reduceAbleList
+                return reduceAbleList
                                 .stream()
                                 .collect(Collectors.groupingBy(ReduceAble::getMergeKey,
                                         Collectors.reducing(ReduceAble::reduce)))
@@ -88,7 +87,6 @@ public interface Reducer<T> {
                                 .map(Optional::get)
                                 .collect(Collectors.toList());
 
-                return list;
             }
 
             return list1;
