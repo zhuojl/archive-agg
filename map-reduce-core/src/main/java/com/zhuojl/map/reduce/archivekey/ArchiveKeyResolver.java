@@ -16,13 +16,5 @@ public interface ArchiveKeyResolver<K extends ArchiveKey> {
      */
     K extract(Method method, Object... params);
 
-    /**
-     * 根据分段参数重构原始参数
-     *
-     * @param archiveKey
-     * @param params 原始参数的clone？
-     * @return
-     */
-    Object[] rebuild(K archiveKey, Object... params);
 
 }

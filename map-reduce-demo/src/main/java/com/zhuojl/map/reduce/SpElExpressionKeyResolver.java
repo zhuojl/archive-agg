@@ -24,10 +24,6 @@ import java.lang.reflect.Method;
 public class SpElExpressionKeyResolver implements ArchiveKeyResolver<SystemArchiveKey> {
   public static final String SPEL_EXPRESSION_RESOLVER = "SpElExpressionResolver";
 
-  @Override
-  public Object[] rebuild(SystemArchiveKey archiveKey, Object... params) {
-    throw new UnsupportedOperationException("spEl can not rebuild ");
-  }
 
   /**
    * 参数发现器
