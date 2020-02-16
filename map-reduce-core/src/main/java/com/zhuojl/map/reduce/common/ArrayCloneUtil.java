@@ -17,7 +17,7 @@ public class ArrayCloneUtil {
         try {
             for (int i = 0; i < arr.length; i++) {
                 // 基本数据类型直接赋值
-                if (skipClone(arr[i])) {
+                if (skipClone(params[i])) {
                     arr[i] = params[i];
                 } else {
                     arr[i] = BeanUtils.cloneBean(params[i]);

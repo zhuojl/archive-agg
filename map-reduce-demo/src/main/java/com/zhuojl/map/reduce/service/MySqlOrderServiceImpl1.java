@@ -28,7 +28,6 @@ import lombok.extern.slf4j.Slf4j;
 public class MySqlOrderServiceImpl1 implements OrderService, Ordered {
 
 
-
     @Override
     public int getOrder() {
         return 1;
@@ -86,6 +85,14 @@ public class MySqlOrderServiceImpl1 implements OrderService, Ordered {
     }
 
 
+    /**
+     * 模拟测试， 实际查询时是根据start和limit查询的，在
+     *
+     * {@link com.zhuojl.map.reduce.config.MapReduceProxy.MapReducePageAdjuster#adjustParam(
+     *java.lang.Integer, java.lang.Object[])}
+     *
+     * 中，处理了start和limit
+     */
     @Override
     public OrderPageDTO page(OrderPageDTO orderQueryDTO) {
         OrderPageDTO orderPageDTO = new OrderPageDTO();
@@ -95,17 +102,20 @@ public class MySqlOrderServiceImpl1 implements OrderService, Ordered {
 
         List<String> list = new ArrayList<>();
         int start = orderQueryDTO.getStart();
-        for (int i = intersection.upperEndpoint() - start; i >= intersection.lowerEndpoint() ; i-- ) {
-            list.add("order:" + getOrder() +", index:"+ i);
+        for (int i = intersection.upperEndpoint() - start; i >= intersection.lowerEndpoint(); i--) {
+            list.add("index:" + i);
         }
-        log.info("list:{}", list);
+        log.info("order:{}, list:{}", getOrder(), list);
         orderPageDTO.setData(list);
         return orderPageDTO;
     }
 
-    public Integer pageCount(OrderPageDTO orderQueryDTO) {
+    /**
+     * 模拟测试，数量为查询与getArchiveKey的交集
+     */
+    public Integer pageCount(OrderPageDTO orderPageDTO) {
         Range<Integer> intersection = getArchiveKey().getRange()
-                .intersection(Range.closed(orderQueryDTO.getLow(), orderQueryDTO.getHigh()));
+                .intersection(Range.closed(orderPageDTO.getLow(), orderPageDTO.getHigh()));
         return intersection.upperEndpoint() - intersection.lowerEndpoint() + 1;
     }
 }

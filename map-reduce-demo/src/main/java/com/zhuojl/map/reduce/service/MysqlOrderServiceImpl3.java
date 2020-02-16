@@ -28,7 +28,7 @@ public class MysqlOrderServiceImpl3 extends MySqlOrderServiceImpl1 {
 
     @Override
     public OrderArchiveKey getArchiveKey() {
-        return new OrderArchiveKey(Range.closed(8, 9));
+        return new OrderArchiveKey(Range.closed(10, 11));
     }
 
 }

@@ -1,7 +1,7 @@
 package com.zhuojl.map.reduce.common;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * copy from org.springframework.data.domain.Pageable
@@ -10,10 +10,10 @@ import java.util.Objects;
  */
 public class Page<T> {
 
-    private List<T> data;
-    private int pageNumber;
-    private int pageSize;
-    private int totalCount;
+    private List<T> data = new ArrayList<>();
+    private int pageNumber = 1;
+    private int pageSize = 10;
+    private int totalCount = 0;
 
 
 

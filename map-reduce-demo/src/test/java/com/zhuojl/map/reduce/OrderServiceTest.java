@@ -84,29 +84,62 @@ public class OrderServiceTest {
     }
 
 
-
     @Test
     public void testPage() {
-        OrderPageDTO orderPageDTO = getOrderPageDTO();
+        OrderPageDTO orderPageDTO = new OrderPageDTO();
+        orderPageDTO.setLow(7);
+        orderPageDTO.setHigh(16);
         orderPageDTO.setPageNumber(2);
         orderPageDTO.setPageSize(3);
+        /*
+         * OrderService6个实现的归档区间[1,15], 根据[7,16]查询，返回结果为[7,15]，总数9
+         * MySqlOrderServiceImpl1区间[4,7]，其他每个依此往上占有2个，即[8,9]、[10,11]、[12,13]、[14,15]
+         * 3个一页，查询第二页时，返回12,11,10
+         */
         OrderPageDTO page = orderService.page(orderPageDTO);
-        System.out.println(page);
-        System.out.println(page.getData());
+        Assert.assertNotNull(page);
+        Assert.assertEquals(9, page.getTotalCount());
+        Assert.assertEquals(3, page.getData().size());
+        Assert.assertEquals("index:12", page.getData().get(0));
+        Assert.assertEquals("index:11", page.getData().get(1));
+        Assert.assertEquals("index:10", page.getData().get(2));
     }
 
-
-
-
-
-    private OrderPageDTO getOrderPageDTO() {
-        OrderPageDTO orderQueryDTO = new OrderPageDTO();
-        orderQueryDTO.setLow(7);
-        orderQueryDTO.setHigh(15);
-
-        return orderQueryDTO;
+    @Test
+    public void testPage1() {
+        OrderPageDTO orderPageDTO = new OrderPageDTO();
+        orderPageDTO.setLow(1);
+        orderPageDTO.setHigh(2);
+        orderPageDTO.setPageNumber(1);
+        orderPageDTO.setPageSize(3);
+        /*
+         * OrderService6个实现的归档区间[1,15], 根据[7,16]查询，返回结果为[7,15]，总数9
+         * MySqlOrderServiceImpl1区间[4,7]，其他每个依此往上占有2个，即[8,9]、[10,11]、[12,13]、[14,15]
+         * 3个一页，查询第二页时，返回12,11,10
+         */
+        OrderPageDTO page = orderService.page(orderPageDTO);
+        Assert.assertNotNull(page);
+        Assert.assertEquals(2, page.getTotalCount());
+        Assert.assertEquals(2, page.getData().size());
     }
 
+    @Test
+    public void testPageEmpty() {
+        OrderPageDTO orderPageDTO = new OrderPageDTO();
+        orderPageDTO.setLow(111);
+        orderPageDTO.setHigh(222);
+        orderPageDTO.setPageNumber(1);
+        orderPageDTO.setPageSize(3);
+        /*
+         * OrderService6个实现的归档区间[1,15], 根据[7,16]查询，返回结果为[7,15]，总数9
+         * MySqlOrderServiceImpl1区间[4,7]，其他每个依此往上占有2个，即[8,9]、[10,11]、[12,13]、[14,15]
+         * 3个一页，查询第二页时，返回12,11,10
+         */
+        OrderPageDTO page = orderService.page(orderPageDTO);
+        Assert.assertNotNull(page);
+        Assert.assertEquals(0, page.getTotalCount());
+        Assert.assertEquals(0, page.getData().size());
+    }
 
 
     private OrderQueryDTO getOrderQueryDTO() {

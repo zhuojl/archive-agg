@@ -79,7 +79,27 @@ public class MongoOrderServiceImpl implements OrderService {
 
     @Override
     public OrderPageDTO page(OrderPageDTO orderQueryDTO) {
-        log.info("this method may empty");
-        return null;
+        OrderPageDTO orderPageDTO = new OrderPageDTO();
+
+        Range<Integer> intersection = getArchiveKey().getRange()
+                .intersection(Range.closed(orderQueryDTO.getLow(), orderQueryDTO.getHigh()));
+
+        List<String> list = new ArrayList<>();
+        int start = orderQueryDTO.getStart();
+        for (int i = intersection.upperEndpoint() - start; i >= intersection.lowerEndpoint(); i--) {
+            list.add("index:" + i);
+        }
+        log.info("order:{}, list:{}", "mongo", list);
+        orderPageDTO.setData(list);
+        return orderPageDTO;
+    }
+
+    /**
+     * 模拟测试，数量为查询与getArchiveKey的交集
+     */
+    public Integer pageCount(OrderPageDTO orderPageDTO) {
+        Range<Integer> intersection = getArchiveKey().getRange()
+                .intersection(Range.closed(orderPageDTO.getLow(), orderPageDTO.getHigh()));
+        return intersection.upperEndpoint() - intersection.lowerEndpoint() + 1;
     }
 }

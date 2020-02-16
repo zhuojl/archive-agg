@@ -8,7 +8,6 @@ import com.zhuojl.map.reduce.common.ArrayCloneUtil;
 import com.zhuojl.map.reduce.common.MapReducePage;
 import com.zhuojl.map.reduce.common.enums.MapMode;
 import com.zhuojl.map.reduce.common.exception.MyRuntimeException;
-import com.zhuojl.map.reduce.reduce.ReduceAble;
 import com.zhuojl.map.reduce.reduce.Reducer;
 
 import org.apache.logging.log4j.util.Strings;
@@ -20,13 +19,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class MapReduceProxy implements InvocationHandler {
 
+    public static final String COUNT = "Count";
     private final List<MapReduceAble> list;
     private final Map<String, ArchiveKeyResolver> map;
     private final Map<String, Reducer> reduceMap;
@@ -84,29 +83,51 @@ public class MapReduceProxy implements InvocationHandler {
 
         if (MapMode.PAGE.equals(sharding.mapMode())) {
 
-            MapReducePage mapReducePage = null;
-            for (Object obj : args) {
-                if (obj instanceof MapReducePage) {
-                    mapReducePage = (MapReducePage) obj;
-                }
-            }
+            MapReducePage mapReducePage = getMapReducePage(args);
             Objects.requireNonNull(mapReducePage, "this must be not null");
+            if (method.getReturnType().isAssignableFrom(MapReducePage.class)) {
+                throw new MyRuntimeException("method with error return type");
+            }
 
             // 便利执行 计数方法 返回 类全名，每区块计数器
             Map<MapReduceAble, Integer> countMap = getCountMap(method, args, archiveKeyResolver, originalArchiveKey);
+            Integer count = countMap.values().stream().reduce(Integer::sum).orElse(0);
+            if (count == 0) {
+                // 如果没有则返回 reduce查询原始对象/或者clone对象，当然这样可能会有问题
+                return mapReducePage;
+            }
 
             // 执行结果
             Map<MapReduceAble, Object> resultMap = getResultMap(method, args, archiveKeyResolver, originalArchiveKey, mapReducePage, countMap);
 
-            return list.stream()
+            Object obj = list.stream()
                     .filter(item -> countMap.containsKey(item) && resultMap.containsKey(item))
                     .map(item -> resultMap.get(item))
                     .reduce((obj1, obj2) -> reducer.reduce(obj1, obj2))
                     .orElse(null);
+
+            if (Objects.isNull(obj)) {
+                // 如果没有则返回 reduce查询原始对象/或者clone对象，当然这样可能会有问题
+                return mapReducePage;
+            }
+
+            ((MapReducePage) obj).setTotalCount(count);
+            return obj;
+
         }
 
 
         throw new UnsupportedOperationException("sth wrong");
+    }
+
+    private MapReducePage getMapReducePage(Object[] args) {
+        MapReducePage mapReducePage = null;
+        for (Object obj : args) {
+            if (obj instanceof MapReducePage) {
+                mapReducePage = (MapReducePage) obj;
+            }
+        }
+        return mapReducePage;
     }
 
     private Map<MapReduceAble, Integer> getCountMap(Method method, Object[] args, ArchiveKeyResolver archiveKeyResolver, ArchiveKey originalArchiveKey) {
@@ -120,7 +141,7 @@ public class MapReduceProxy implements InvocationHandler {
             }
             Method countMethod;
             try {
-                countMethod = item.getClass().getMethod(method.getName() + "Count", method.getParameterTypes());
+                countMethod = item.getClass().getMethod(method.getName() + COUNT, method.getParameterTypes());
             } catch (NoSuchMethodException e) {
                 log.error("NoSuchMethodException", e);
                 throw new MyRuntimeException("NoSuchMethodException");
@@ -134,10 +155,10 @@ public class MapReduceProxy implements InvocationHandler {
     }
 
     private Map<MapReduceAble, Object> getResultMap(Method method, Object[] args,
-                                            ArchiveKeyResolver archiveKeyResolver,
-                                            ArchiveKey originalArchiveKey,
-                                            MapReducePage mapReducePage,
-                                            Map<MapReduceAble, Integer> countMap) {
+                                                    ArchiveKeyResolver archiveKeyResolver,
+                                                    ArchiveKey originalArchiveKey,
+                                                    MapReducePage mapReducePage,
+                                                    Map<MapReduceAble, Integer> countMap) {
 
         Map<MapReduceAble, Object> map = new HashMap<>();
 
