@@ -1,0 +1,27 @@
+
+在当前的版本中，大致执行流程
+
+@startuml
+actor Client
+autonumber
+
+Client -> DemoService: someQuery
+
+DemoService -> MapReduceProxy: someQuery
+
+MapReduceProxy -> MapReduceParamHandler: extractParam
+MapReduceParamHandler --> MapReduceProxy: composedParam
+
+MapReduceProxy -> MapReduceProxy: filter by archiveKey
+note left: chose executeAble \n demoServiceImpl
+
+MapReduceProxy -> MapReduceProxy: execute each demoServiceImpl \n get executeResult
+note left: adjust executeParam \n and execute
+
+MapReduceProxy -> ReduceHandler:reduce
+
+ReduceHandler --> MapReduceProxy: final result
+MapReduceProxy --> DemoService: final result
+DemoService --> Client: final result
+
+@enduml
