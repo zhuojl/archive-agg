@@ -1,7 +1,7 @@
 package com.zhuojl.archive.config;
 
-import com.zhuojl.archive.demo.annotation.EnableAutoAgg;
-import com.zhuojl.archive.demo.annotation.ArchiveAgg;
+import com.zhuojl.archive.annotation.EnableAutoAgg;
+import com.zhuojl.archive.annotation.ArchiveAgg;
 import com.zhuojl.archive.common.exception.MyRuntimeException;
 
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;

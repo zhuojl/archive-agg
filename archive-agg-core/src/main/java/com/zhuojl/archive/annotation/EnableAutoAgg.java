@@ -1,4 +1,4 @@
-package com.zhuojl.archive.demo.annotation;
+package com.zhuojl.archive.annotation;
 
 import com.zhuojl.archive.config.ArchiveAggRegistrar;
 

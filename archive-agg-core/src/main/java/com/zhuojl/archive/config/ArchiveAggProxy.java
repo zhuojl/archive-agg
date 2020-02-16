@@ -1,7 +1,7 @@
 package com.zhuojl.archive.config;
 
 import com.zhuojl.archive.MapReduceAble;
-import com.zhuojl.archive.demo.annotation.ArchiveAggMethodConfig;
+import com.zhuojl.archive.annotation.ArchiveAggMethodConfig;
 import com.zhuojl.archive.archivekey.ArchiveKey;
 import com.zhuojl.archive.archivekey.ArchiveKeyResolver;
 import com.zhuojl.archive.common.ArchiveAggPage;

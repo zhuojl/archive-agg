@@ -1,7 +1,7 @@
 package com.zhuojl.archive;
 
 
-import com.zhuojl.archive.demo.annotation.EnableAutoAgg;
+import com.zhuojl.archive.annotation.EnableAutoAgg;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
