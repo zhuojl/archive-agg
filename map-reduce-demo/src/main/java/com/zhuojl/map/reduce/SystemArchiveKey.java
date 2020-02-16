@@ -22,7 +22,6 @@ public class SystemArchiveKey implements ArchiveKey<SystemArchiveKey> {
 
     private Range<Integer> range;
 
-
     @Override
     public SystemArchiveKey intersection(SystemArchiveKey archiveKey) {
         if (Objects.isNull(archiveKey) || Objects.isNull(archiveKey.getRange())) {
@@ -36,5 +35,10 @@ public class SystemArchiveKey implements ArchiveKey<SystemArchiveKey> {
         Range<Integer> intersection = this.range.intersection(archiveKey.getRange());
 
         return new SystemArchiveKey(intersection);
+    }
+
+    @Override
+    public int getOrder() {
+        return range.upperEndpoint();
     }
 }

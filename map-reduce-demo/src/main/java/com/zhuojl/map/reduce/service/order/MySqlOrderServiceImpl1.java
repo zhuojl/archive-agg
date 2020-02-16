@@ -25,13 +25,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Service
 @Slf4j
-public class MySqlOrderServiceImpl1 implements OrderService, Ordered {
-
-
-    @Override
-    public int getOrder() {
-        return 1;
-    }
+public class MySqlOrderServiceImpl1 implements OrderService {
 
     @Override
     public SystemArchiveKey getArchiveKey() {
@@ -88,8 +82,7 @@ public class MySqlOrderServiceImpl1 implements OrderService, Ordered {
     /**
      * 模拟测试， 实际查询时是根据start和limit查询的，在
      *
-     * {@link com.zhuojl.map.reduce.config.MapReduceProxy.MapReducePageAdjuster#adjustParam(
-     *java.lang.Integer, java.lang.Object[])}
+     * {@link com.zhuojl.map.reduce.config.MapReducePageAdjuster#adjustParam(java.lang.Integer, java.lang.Object[])}
      *
      * 中，处理了start和limit
      */
@@ -105,7 +98,7 @@ public class MySqlOrderServiceImpl1 implements OrderService, Ordered {
         for (int i = intersection.upperEndpoint() - start; i >= intersection.lowerEndpoint(); i--) {
             list.add("index:" + i);
         }
-        log.info("order:{}, list:{}", getOrder(), list);
+        log.info("order:{}, list:{}", getArchiveKey().getOrder(), list);
         orderPageDTO.setData(list);
         return orderPageDTO;
     }

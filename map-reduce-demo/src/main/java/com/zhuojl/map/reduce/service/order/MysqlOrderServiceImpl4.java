@@ -18,11 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 public class MysqlOrderServiceImpl4 extends MySqlOrderServiceImpl1 {
 
     @Override
-    public int getOrder() {
-        return 4;
-    }
-
-    @Override
     public SystemArchiveKey getArchiveKey() {
         return new SystemArchiveKey(Range.closed(12, 13));
     }

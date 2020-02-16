@@ -1,5 +1,6 @@
 package com.zhuojl.map.reduce.config;
 
+import com.zhuojl.map.reduce.MapReduceAble;
 import com.zhuojl.map.reduce.archivekey.ArchiveKeyResolver;
 import com.zhuojl.map.reduce.reduce.Reducer;
 
@@ -7,7 +8,6 @@ import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.core.Ordered;
 
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
@@ -37,23 +37,15 @@ public class MapReduceFactory implements FactoryBean, BeanClassLoaderAware, Appl
 
         Map<String, ArchiveKeyResolver> map = applicationContext.getBeansOfType(ArchiveKeyResolver.class);
         Map<String, Reducer> reduceMap = applicationContext.getBeansOfType(Reducer.class);
-        List list = Arrays.stream(testInterfaces)
+        List<MapReduceAble> list = Arrays.stream(testInterfaces)
+                // 因为代理bean使用的就是这个名字（在register时指定），需要排除自己引用自己。
                 .filter(beanName -> !beanName.equals(type.getName()))
-                .map(beanName -> applicationContext.getBean(beanName))
-                // 排序主要用于确认优先级
-                .sorted((o1, o2) -> {
-                    int order1 = 0;
-                    int order2 = 0;
-                    if (o1 instanceof Ordered) {
-                        order1 = ((Ordered) o1).getOrder();
-                    }
-                    if (o2 instanceof Ordered) {
-                        order2 = ((Ordered) o2).getOrder();
-                    }
-
-                    return order2 - order1;
-
+                .map(beanName -> {
+                    Object bean = applicationContext.getBean(beanName);
+                    return (MapReduceAble)bean;
                 })
+                // 排序主要用于确认优先级
+                .sorted((o1, o2) -> o2.getArchiveKey().getOrder() - o1.getArchiveKey().getOrder())
                 .collect(Collectors.toList());
 
         MapReduceProxy mapReduceProxy = new MapReduceProxy(list, map, reduceMap);

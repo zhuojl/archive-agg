@@ -14,4 +14,9 @@ public interface ArchiveKey<K extends ArchiveKey> {
      */
     K intersection(K config);
 
+    /**
+     * 归档键 的 优先级
+     * @return
+     */
+    int getOrder();
 }
