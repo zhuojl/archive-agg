@@ -99,6 +99,7 @@ public class MongoOrderServiceImpl implements OrderService {
     /**
      * 模拟测试，数量为查询与getArchiveKey的交集
      */
+    @Override
     public Integer pageCount(OrderPageDTO orderPageDTO) {
         Range<Integer> intersection = getArchiveKey().getRange()
                 .intersection(Range.closed(orderPageDTO.getLow(), orderPageDTO.getHigh()));

@@ -88,6 +88,14 @@ public interface OrderService extends MapReduceAble<SystemArchiveKey> {
     @SpelArchiveKeyExpression(high = "#orderQueryDTO.high", low = "#orderQueryDTO.low")
     OrderPageDTO page(OrderPageDTO orderQueryDTO);
 
+    /**
+     * {@link OrderService#page(com.zhuojl.map.reduce.dto.OrderPageDTO)} 伴生方法，不可删除
+     *
+     * FIXME 存在被认为是无用方法被删除的可能。。。。
+     * @param orderPageDTO
+     * @return
+     */
+    Integer pageCount(OrderPageDTO orderPageDTO);
 
     /**
      * 定制 简单参数处理类

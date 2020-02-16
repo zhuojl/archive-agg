@@ -150,18 +150,17 @@ public class MapReduceProxy implements InvocationHandler {
     private Map<MapReduceAble, Integer> getCountMap(List<MapReduceAble> filteredList, Method method,
                                                     Object[] args) {
 
+        Method countMethod;
+        try {
+            countMethod = method.getDeclaringClass().getMethod(method.getName() + COUNT, method.getParameterTypes());
+        } catch (NoSuchMethodException e) {
+            log.error("NoSuchMethodException", e);
+            throw new MyRuntimeException("page count method is needed for this method");
+        }
+
         Map<MapReduceAble, Integer> countMap = new HashMap<>(filteredList.size());
         for (MapReduceAble item : filteredList) {
-            Method countMethod;
-            try {
-                countMethod = item.getClass().getMethod(method.getName() + COUNT, method.getParameterTypes());
-            } catch (NoSuchMethodException e) {
-                log.error("NoSuchMethodException", e);
-                throw new MyRuntimeException("NoSuchMethodException");
-            }
-
             Object count = doExecute(countMethod, item, args);
-
             countMap.put(item, Objects.isNull(count) ? 0 : (Integer) count);
         }
         return countMap;
