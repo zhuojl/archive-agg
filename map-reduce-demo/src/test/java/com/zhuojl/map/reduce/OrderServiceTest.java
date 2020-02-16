@@ -112,11 +112,7 @@ public class OrderServiceTest {
         orderPageDTO.setHigh(2);
         orderPageDTO.setPageNumber(1);
         orderPageDTO.setPageSize(3);
-        /*
-         * OrderService6个实现的归档区间[1,15], 根据[7,16]查询，返回结果为[7,15]，总数9
-         * MySqlOrderServiceImpl1区间[4,7]，其他每个依此往上占有2个，即[8,9]、[10,11]、[12,13]、[14,15]
-         * 3个一页，查询第二页时，返回12,11,10
-         */
+
         OrderPageDTO page = orderService.page(orderPageDTO);
         Assert.assertNotNull(page);
         Assert.assertEquals(2, page.getTotalCount());
@@ -130,11 +126,7 @@ public class OrderServiceTest {
         orderPageDTO.setHigh(222);
         orderPageDTO.setPageNumber(1);
         orderPageDTO.setPageSize(3);
-        /*
-         * OrderService6个实现的归档区间[1,15], 根据[7,16]查询，返回结果为[7,15]，总数9
-         * MySqlOrderServiceImpl1区间[4,7]，其他每个依此往上占有2个，即[8,9]、[10,11]、[12,13]、[14,15]
-         * 3个一页，查询第二页时，返回12,11,10
-         */
+
         OrderPageDTO page = orderService.page(orderPageDTO);
         Assert.assertNotNull(page);
         Assert.assertEquals(0, page.getTotalCount());

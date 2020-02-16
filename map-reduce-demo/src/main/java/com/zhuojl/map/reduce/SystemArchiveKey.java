@@ -10,7 +10,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 /**
- * 归档规则，假定归档数字区间归档，其实这里按日期归档一样的。
+ * 系统归档键，假定归档数字区间归档，其实这里按日期归档一样的。
+ *
+ * 其实一个系统一般只会有一个归档规则。。
  *
  * @author zhuojl
  */
