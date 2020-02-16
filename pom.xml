@@ -5,8 +5,8 @@
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
     <modules>
-        <module>map-reduce-core</module>
-        <module>map-reduce-demo</module>
+        <module>archive-agg-core</module>
+        <module>archive-agg-demo</module>
     </modules>
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -15,7 +15,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.zhuojl</groupId>
-    <artifactId>map-reduce</artifactId>
+    <artifactId>archive-agg</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>map-reduce</name>
     <description>从多个数据源查询数据，并将结果集自动归并</description>
