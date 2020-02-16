@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum MapMode {
+public enum ExecuteMode {
 
     /**
      * find first, 适用于详情类的接口，先从热库中查询。

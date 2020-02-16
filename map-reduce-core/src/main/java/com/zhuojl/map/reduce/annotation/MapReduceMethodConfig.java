@@ -2,7 +2,7 @@ package com.zhuojl.map.reduce.annotation;
 
 
 
-import com.zhuojl.map.reduce.common.enums.MapMode;
+import com.zhuojl.map.reduce.common.enums.ExecuteMode;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -21,7 +21,7 @@ import java.lang.annotation.Target;
 @Documented
 public @interface MapReduceMethodConfig {
 
-    MapMode mapMode() default MapMode.ALL;
+    ExecuteMode executeMode() default ExecuteMode.ALL;
 
     /**
      * 方法参数处理器 beanName

@@ -7,7 +7,7 @@ import com.zhuojl.map.reduce.OrderArchiveKey;
 import com.zhuojl.map.reduce.annotation.MapReduce;
 import com.zhuojl.map.reduce.annotation.MapReduceMethodConfig;
 import com.zhuojl.map.reduce.archivekey.ArchiveKeyResolver;
-import com.zhuojl.map.reduce.common.enums.MapMode;
+import com.zhuojl.map.reduce.common.enums.ExecuteMode;
 import com.zhuojl.map.reduce.dto.OrderPageDTO;
 import com.zhuojl.map.reduce.dto.OrderQueryDTO;
 import com.zhuojl.map.reduce.model.GroupBySth;
@@ -69,14 +69,14 @@ public interface OrderService extends MapReduceAble<OrderArchiveKey> {
     /**
      * 测试 find first 模式
      */
-    @MapReduceMethodConfig(mapMode = MapMode.FIND_FIRST, paramHandler = ORDER_QUERY_HANDLER)
+    @MapReduceMethodConfig(executeMode = ExecuteMode.FIND_FIRST, paramHandler = ORDER_QUERY_HANDLER)
     OrderStatistic findFirst(OrderQueryDTO orderQueryDTO);
 
 
     /**
      * 测试 分页 模式
      */
-    @MapReduceMethodConfig(mapMode = MapMode.PAGE, paramHandler = ORDER_PAGE_HANDLER)
+    @MapReduceMethodConfig(executeMode = ExecuteMode.PAGE, paramHandler = ORDER_PAGE_HANDLER)
     OrderPageDTO page(OrderPageDTO orderQueryDTO);
 
 

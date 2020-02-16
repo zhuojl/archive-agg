@@ -6,7 +6,7 @@ import com.zhuojl.map.reduce.archivekey.ArchiveKey;
 import com.zhuojl.map.reduce.archivekey.ArchiveKeyResolver;
 import com.zhuojl.map.reduce.common.ArrayCloneUtil;
 import com.zhuojl.map.reduce.common.MapReducePage;
-import com.zhuojl.map.reduce.common.enums.MapMode;
+import com.zhuojl.map.reduce.common.enums.ExecuteMode;
 import com.zhuojl.map.reduce.common.exception.MyRuntimeException;
 import com.zhuojl.map.reduce.reduce.Reducer;
 
@@ -61,7 +61,7 @@ public class MapReduceProxy implements InvocationHandler {
         ArchiveKey originalArchiveKey = archiveKeyResolver.extract(args);
         Reducer reducer = getReducer(sharding);
 
-        if (MapMode.FIND_FIRST.equals(sharding.mapMode())) {
+        if (ExecuteMode.FIND_FIRST.equals(sharding.executeMode())) {
             return list.stream()
                     .map(item ->
                             doExecute(method, ArrayCloneUtil.cloneParams(args), archiveKeyResolver, originalArchiveKey, item)
@@ -71,7 +71,7 @@ public class MapReduceProxy implements InvocationHandler {
                     .orElse(null);
         }
 
-        if (MapMode.ALL.equals(sharding.mapMode())) {
+        if (ExecuteMode.ALL.equals(sharding.executeMode())) {
             return list.stream()
                     .map(item ->
                             doExecute(method, ArrayCloneUtil.cloneParams(args), archiveKeyResolver, originalArchiveKey, item)
@@ -81,12 +81,12 @@ public class MapReduceProxy implements InvocationHandler {
                     .orElse(null);
         }
 
-        if (MapMode.PAGE.equals(sharding.mapMode())) {
+        if (ExecuteMode.PAGE.equals(sharding.executeMode())) {
 
             MapReducePage mapReducePage = getMapReducePage(args);
-            Objects.requireNonNull(mapReducePage, "this must be not null");
+            Objects.requireNonNull(mapReducePage, "mapReducePage must be not null");
             if (method.getReturnType().isAssignableFrom(MapReducePage.class)) {
-                throw new MyRuntimeException("method with error return type");
+                throw new MyRuntimeException("page method with error return type");
             }
 
             // 便利执行 计数方法 返回 类全名，每区块计数器
