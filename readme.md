@@ -4,7 +4,7 @@
 
 ### 关于名字
 一开始因为数据分片的原因, 叫sharding；不满意后面因为数据组合，所以改叫compose；后来看了hadoop mapReduce，感觉有那么点意思（蹭蹭蹭。。。），
-改叫map-reduce了
+改叫map-reduce了。其实主要做的事情，是归档数据处理，但是暂时不改名字，等缘分。
 
 归档键：在demo中，``归档键``是high、low, 表示数据按这几个字段分别做多级归档，每级归档数据由一个``归档实现``处理。
 归档实现：在demo中，OrderService 有一个Mongo和5个Mysql的``归档实现``。
