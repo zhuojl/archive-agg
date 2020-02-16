@@ -40,6 +40,7 @@ public class MapReduceFactory implements FactoryBean, BeanClassLoaderAware, Appl
         List list = Arrays.stream(testInterfaces)
                 .filter(beanName -> !beanName.equals(type.getName()))
                 .map(beanName -> applicationContext.getBean(beanName))
+                // 排序主要用于确认优先级
                 .sorted((o1, o2) -> {
                     int order1 = 0;
                     int order2 = 0;

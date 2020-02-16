@@ -4,8 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * copy from org.springframework.data.domain.Pageable
- *
+ * 基本分页对象
  * @author zhuojl
  */
 public class Page<T> {

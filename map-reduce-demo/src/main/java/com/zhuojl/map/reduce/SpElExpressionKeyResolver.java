@@ -17,13 +17,12 @@ import org.springframework.stereotype.Service;
 import java.lang.reflect.Method;
 
 /**
- * @author TaoYu
- * @since 2.5.0
+ * @author zhuojl
  */
 @Service(SpElExpressionKeyResolver.SPEL_EXPRESSION_RESOLVER)
 public class SpElExpressionKeyResolver implements ArchiveKeyResolver<SystemArchiveKey> {
-  public static final String SPEL_EXPRESSION_RESOLVER = "SpElExpressionResolver";
 
+  public static final String SPEL_EXPRESSION_RESOLVER = "SpElExpressionResolver";
 
   /**
    * 参数发现器

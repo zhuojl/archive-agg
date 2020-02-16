@@ -7,7 +7,8 @@ import com.zhuojl.map.reduce.common.enums.ExecuteMode;
 import java.util.Objects;
 
 /**
- * 在 {@link ExecuteMode#PAGE}模式下， 需要做分页调整，
+ * 在 {@link ExecuteMode#PAGE}模式下， 需要做分页参数调整
+ *
  * @author zhuojl
  */
 public class MapReducePageAdjuster {

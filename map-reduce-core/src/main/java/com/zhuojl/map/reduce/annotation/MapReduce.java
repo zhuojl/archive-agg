@@ -4,6 +4,7 @@ import java.lang.annotation.*;
 
 /**
  * 标记需要组合的类
+ * 类似FeignClient
  *
  * @author zhuojl
  */

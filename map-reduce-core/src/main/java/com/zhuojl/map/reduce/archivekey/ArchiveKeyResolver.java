@@ -3,7 +3,7 @@ package com.zhuojl.map.reduce.archivekey;
 import java.lang.reflect.Method;
 
 /**
- * 组合执行参数处理器，作用是为在之前的应用场景中，每个分段的有数据重合，需要重组参数，避免查询到重复数据。
+ * 用于从方法中解析 ArchiveKey
  * @author zhuojl
  * @param <K>
  */

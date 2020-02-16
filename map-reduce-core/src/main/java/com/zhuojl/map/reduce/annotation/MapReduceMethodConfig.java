@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
 
 
 /**
- * 可以标记方法如何处理、结果集合如何处理、是否并发执行、是否快速返回。
+ * 配置方法元数据
  *
  * @author zhuojl
  */
@@ -21,16 +21,21 @@ import java.lang.annotation.Target;
 @Documented
 public @interface MapReduceMethodConfig {
 
+    /**
+     * 执行模式
+     * @return
+     */
     ExecuteMode executeMode() default ExecuteMode.ALL;
 
     /**
-     * 方法参数处理器 beanName
+     *
+     * 方法参数处理器 beanName，用于提取 归档键
      * @return
      */
     String paramHandler();
 
     /**
-     *
+     * 数据合并beanName
      * @return
      */
     String reducer() default "";

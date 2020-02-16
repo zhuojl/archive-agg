@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Import;
 import java.lang.annotation.*;
 
 /**
- * 允许自动组合
+ * 允许自动组合 归档实现，是开起这套框架的入口
  * 参照EnableFeignClients
  * @author zhuojl
  */
