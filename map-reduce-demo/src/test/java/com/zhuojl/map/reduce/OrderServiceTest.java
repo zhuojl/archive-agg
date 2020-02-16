@@ -85,7 +85,7 @@ public class OrderServiceTest {
 
 
     @Test
-    public void testPage() {
+    public void testPageInSecondPage() {
         OrderPageDTO orderPageDTO = new OrderPageDTO();
         orderPageDTO.setLow(7);
         orderPageDTO.setHigh(16);
@@ -106,7 +106,7 @@ public class OrderServiceTest {
     }
 
     @Test
-    public void testPage1() {
+    public void testPageInFirstPage() {
         OrderPageDTO orderPageDTO = new OrderPageDTO();
         orderPageDTO.setLow(1);
         orderPageDTO.setHigh(2);

@@ -4,13 +4,13 @@ import com.zhuojl.map.reduce.MapReduceAble;
 import com.zhuojl.map.reduce.annotation.MapReduceMethodConfig;
 import com.zhuojl.map.reduce.archivekey.ArchiveKey;
 import com.zhuojl.map.reduce.archivekey.ArchiveKeyResolver;
-import com.zhuojl.map.reduce.common.ArrayCloneUtil;
 import com.zhuojl.map.reduce.common.MapReducePage;
 import com.zhuojl.map.reduce.common.enums.ExecuteMode;
 import com.zhuojl.map.reduce.common.exception.MyRuntimeException;
 import com.zhuojl.map.reduce.reduce.Reducer;
 
 import org.apache.logging.log4j.util.Strings;
+import org.springframework.util.CollectionUtils;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -63,8 +64,9 @@ public class MapReduceProxy implements InvocationHandler {
 
         if (ExecuteMode.FIND_FIRST.equals(sharding.executeMode())) {
             return list.stream()
+                    .filter(item -> filter(item, originalArchiveKey))
                     .map(item ->
-                            doExecute(method, args, originalArchiveKey, item)
+                            doExecute(method, item, args)
                     )
                     .filter(Objects::nonNull)
                     .findFirst()
@@ -73,14 +75,16 @@ public class MapReduceProxy implements InvocationHandler {
 
         if (ExecuteMode.ALL.equals(sharding.executeMode())) {
             return list.stream()
+                    .filter(item -> filter(item, originalArchiveKey))
                     .map(item ->
-                            doExecute(method, args, originalArchiveKey, item)
+                            doExecute(method, item, args)
                     )
                     .filter(Objects::nonNull)
                     .reduce((obj1, obj2) -> reducer.reduce(obj1, obj2))
                     .orElse(null);
         }
 
+        // fixme 抽象策略
         if (ExecuteMode.PAGE.equals(sharding.executeMode())) {
 
             MapReducePage mapReducePage = getMapReducePage(args);
@@ -89,16 +93,25 @@ public class MapReduceProxy implements InvocationHandler {
                 throw new MyRuntimeException("page method with error return type");
             }
 
+            List<MapReduceAble> filteredList = list.stream()
+                    .filter(item -> filter(item, originalArchiveKey))
+                    .collect(Collectors.toList());
+
+            if (CollectionUtils.isEmpty(filteredList)) {
+                // XXX 如果没有则返回 reduce查询原始对象/或者clone对象，当然这样可能会有问题
+                return mapReducePage;
+            }
+
             // 便利执行 计数方法 返回 类全名，每区块计数器
-            Map<MapReduceAble, Integer> countMap = getCountMap(method, args, originalArchiveKey);
+            Map<MapReduceAble, Integer> countMap = getCountMap(filteredList, method, args);
             Integer count = countMap.values().stream().reduce(Integer::sum).orElse(0);
             if (count == 0) {
-                // 如果没有则返回 reduce查询原始对象/或者clone对象，当然这样可能会有问题
+                // XXX 如果没有则返回 reduce查询原始对象/或者clone对象，当然这样可能会有问题
                 return mapReducePage;
             }
 
             // 执行结果
-            Map<MapReduceAble, Object> resultMap = getResultMap(method, args, archiveKeyResolver, originalArchiveKey, mapReducePage, countMap);
+            Map<MapReduceAble, Object> resultMap = getResultMap(filteredList, method, args, mapReducePage, countMap);
 
             Object obj = list.stream()
                     .filter(item -> countMap.containsKey(item) && resultMap.containsKey(item))
@@ -107,7 +120,7 @@ public class MapReduceProxy implements InvocationHandler {
                     .orElse(null);
 
             if (Objects.isNull(obj)) {
-                // 如果没有则返回 reduce查询原始对象/或者clone对象，当然这样可能会有问题
+                // XXX 如果没有则返回 reduce查询原始对象/或者clone对象，当然这样可能会有问题
                 return mapReducePage;
             }
 
@@ -130,15 +143,11 @@ public class MapReduceProxy implements InvocationHandler {
         return mapReducePage;
     }
 
-    private Map<MapReduceAble, Integer> getCountMap(Method method, Object[] args, ArchiveKey originalArchiveKey) {
-        Map<MapReduceAble, Integer> countMap = new HashMap<>(list.size());
-        for (MapReduceAble item : list) {
-            // 类配置与 原始归档参数 求交集
-            ArchiveKey intersectionArchiveKey = item.intersectionArchiveKey(originalArchiveKey);
-            // 类配置是否和查询有交集
-            if (Objects.isNull(intersectionArchiveKey)) {
-                continue;
-            }
+    private Map<MapReduceAble, Integer> getCountMap(List<MapReduceAble> filteredList, Method method,
+                                                    Object[] args) {
+
+        Map<MapReduceAble, Integer> countMap = new HashMap<>(filteredList.size());
+        for (MapReduceAble item : filteredList) {
             Method countMethod;
             try {
                 countMethod = item.getClass().getMethod(method.getName() + COUNT, method.getParameterTypes());
@@ -146,7 +155,8 @@ public class MapReduceProxy implements InvocationHandler {
                 log.error("NoSuchMethodException", e);
                 throw new MyRuntimeException("NoSuchMethodException");
             }
-            Object count = invoke(countMethod, item, ArrayCloneUtil.cloneParams(args));
+
+            Object count = doExecute(countMethod, item, args);
 
             countMap.put(item, Objects.isNull(count) ? 0 : (Integer) count);
         }
@@ -154,9 +164,8 @@ public class MapReduceProxy implements InvocationHandler {
 
     }
 
-    private Map<MapReduceAble, Object> getResultMap(Method method, Object[] args,
-                                                    ArchiveKeyResolver archiveKeyResolver,
-                                                    ArchiveKey originalArchiveKey,
+    private Map<MapReduceAble, Object> getResultMap(List<MapReduceAble> filteredList,
+                                                    Method method, Object[] args,
                                                     MapReducePage mapReducePage,
                                                     Map<MapReduceAble, Integer> countMap) {
 
@@ -165,20 +174,14 @@ public class MapReduceProxy implements InvocationHandler {
         // adjust Page Params(start, limit)
         MapReducePageAdjuster mapReducePageAdjuster = new MapReducePageAdjuster(mapReducePage);
 
-        for (MapReduceAble mapReduceAble : list) {
-            // 类配置与 原始归档参数 求交集
-            ArchiveKey intersectionArchiveKey = mapReduceAble.intersectionArchiveKey(originalArchiveKey);
-            // 类配置是否和查询有交集
-            if (Objects.isNull(intersectionArchiveKey)) {
+        for (MapReduceAble mapReduceAble : filteredList) {
+
+            Object[] adjustParam = mapReducePageAdjuster.adjustParam(countMap.get(mapReduceAble), args);
+
+            if (Objects.isNull(adjustParam)) {
                 continue;
             }
-
-            Object[] clonedParams = mapReducePageAdjuster.adjustParam(countMap.get(mapReduceAble), args);
-
-            if (Objects.isNull(clonedParams)) {
-                continue;
-            }
-            Object result = invoke(method, mapReduceAble, clonedParams);
+            Object result = doExecute(method, mapReduceAble, adjustParam);
             map.put(mapReduceAble, result);
         }
 
@@ -189,31 +192,13 @@ public class MapReduceProxy implements InvocationHandler {
     /**
      * 执行请求
      *
+     * @param mapReduceAble      invoke 的 target
      * @param executedParams     原始参数
-     * @param originalArchiveKey 原始归档参数
-     * @param target             invoke 的 target
      */
-    private Object doExecute(Method method, Object[] executedParams,
-                             ArchiveKey originalArchiveKey,
-                             MapReduceAble target) {
+    private Object doExecute(Method method, MapReduceAble mapReduceAble, Object[] executedParams) {
 
-        // 类配置与 原始归档参数 求交集
-        ArchiveKey intersectionArchiveKey = target.intersectionArchiveKey(originalArchiveKey);
-        // 类配置是否和查询有交集
-        if (Objects.isNull(intersectionArchiveKey)) {
-            return null;
-        }
-
-        // 根据归档键 交集 重构 方法参数
-        return invoke(method, target, executedParams);
-    }
-
-
-    private Object invoke(Method method,
-                          MapReduceAble mapReduceAble,
-                          Object[] params) {
         try {
-            return method.invoke(mapReduceAble, params);
+            return method.invoke(mapReduceAble, executedParams);
         } catch (IllegalAccessException e) {
             log.error("IllegalAccessException ", e);
             throw new MyRuntimeException("c");
@@ -221,7 +206,16 @@ public class MapReduceProxy implements InvocationHandler {
             log.error("InvocationTargetException", e);
             throw new MyRuntimeException("d");
         }
+
+
     }
+
+    private boolean filter(MapReduceAble mapReduceAble, ArchiveKey originalArchiveKey) {
+
+        // 类配置是否和查询有交集
+        return Objects.nonNull(mapReduceAble.intersectionArchiveKey(originalArchiveKey));
+    }
+
 
 
     private Reducer extractReducer(MapReduceMethodConfig sharding) {
