@@ -1,14 +1,10 @@
-package com.zhuojl.map.reduce.service;
+package com.zhuojl.map.reduce.service.order;
 
 import com.google.common.collect.Range;
 
-import com.zhuojl.map.reduce.OrderArchiveKey;
-import com.zhuojl.map.reduce.dto.OrderPageDTO;
+import com.zhuojl.map.reduce.SystemArchiveKey;
 
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,8 +23,8 @@ public class MysqlOrderServiceImpl2 extends MySqlOrderServiceImpl1 {
     }
 
     @Override
-    public OrderArchiveKey getArchiveKey() {
-        return new OrderArchiveKey(Range.closed(8, 9));
+    public SystemArchiveKey getArchiveKey() {
+        return new SystemArchiveKey(Range.closed(8, 9));
     }
 
 

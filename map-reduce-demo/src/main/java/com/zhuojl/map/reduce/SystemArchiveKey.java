@@ -10,19 +10,19 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 /**
- * 订单归档规则，假定归档数字区间归档，其实这里按日期归档一样的。
+ * 归档规则，假定归档数字区间归档，其实这里按日期归档一样的。
  *
  * @author zhuojl
  */
 @Data
 @AllArgsConstructor
-public class OrderArchiveKey implements ArchiveKey<OrderArchiveKey> {
+public class SystemArchiveKey implements ArchiveKey<SystemArchiveKey> {
 
     private Range<Integer> range;
 
 
     @Override
-    public OrderArchiveKey intersection(OrderArchiveKey archiveKey) {
+    public SystemArchiveKey intersection(SystemArchiveKey archiveKey) {
         if (Objects.isNull(archiveKey) || Objects.isNull(archiveKey.getRange())) {
             return null;
         }
@@ -33,6 +33,6 @@ public class OrderArchiveKey implements ArchiveKey<OrderArchiveKey> {
 
         Range<Integer> intersection = this.range.intersection(archiveKey.getRange());
 
-        return new OrderArchiveKey(intersection);
+        return new SystemArchiveKey(intersection);
     }
 }

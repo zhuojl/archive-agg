@@ -58,13 +58,13 @@ public class MapReduceProxy implements InvocationHandler {
     private Object executeByMapReduce(Method method, Object[] args, MapReduceMethodConfig sharding) {
 
         ArchiveKeyResolver archiveKeyResolver = map.get(sharding.paramHandler());
-        ArchiveKey originalArchiveKey = archiveKeyResolver.extract(args);
+        ArchiveKey originalArchiveKey = archiveKeyResolver.extract(method, args);
         Reducer reducer = extractReducer(sharding);
 
         if (ExecuteMode.FIND_FIRST.equals(sharding.executeMode())) {
             return list.stream()
                     .map(item ->
-                            doExecute(method, ArrayCloneUtil.cloneParams(args), archiveKeyResolver, originalArchiveKey, item)
+                            doExecute(method, args, originalArchiveKey, item)
                     )
                     .filter(Objects::nonNull)
                     .findFirst()
@@ -74,7 +74,7 @@ public class MapReduceProxy implements InvocationHandler {
         if (ExecuteMode.ALL.equals(sharding.executeMode())) {
             return list.stream()
                     .map(item ->
-                            doExecute(method, ArrayCloneUtil.cloneParams(args), archiveKeyResolver, originalArchiveKey, item)
+                            doExecute(method, args, originalArchiveKey, item)
                     )
                     .filter(Objects::nonNull)
                     .reduce((obj1, obj2) -> reducer.reduce(obj1, obj2))
@@ -90,7 +90,7 @@ public class MapReduceProxy implements InvocationHandler {
             }
 
             // 便利执行 计数方法 返回 类全名，每区块计数器
-            Map<MapReduceAble, Integer> countMap = getCountMap(method, args, archiveKeyResolver, originalArchiveKey);
+            Map<MapReduceAble, Integer> countMap = getCountMap(method, args, originalArchiveKey);
             Integer count = countMap.values().stream().reduce(Integer::sum).orElse(0);
             if (count == 0) {
                 // 如果没有则返回 reduce查询原始对象/或者clone对象，当然这样可能会有问题
@@ -130,7 +130,7 @@ public class MapReduceProxy implements InvocationHandler {
         return mapReducePage;
     }
 
-    private Map<MapReduceAble, Integer> getCountMap(Method method, Object[] args, ArchiveKeyResolver archiveKeyResolver, ArchiveKey originalArchiveKey) {
+    private Map<MapReduceAble, Integer> getCountMap(Method method, Object[] args, ArchiveKey originalArchiveKey) {
         Map<MapReduceAble, Integer> countMap = new HashMap<>(list.size());
         for (MapReduceAble item : list) {
             // 类配置与 原始归档参数 求交集
@@ -146,7 +146,7 @@ public class MapReduceProxy implements InvocationHandler {
                 log.error("NoSuchMethodException", e);
                 throw new MyRuntimeException("NoSuchMethodException");
             }
-            Object count = invoke(countMethod, archiveKeyResolver, item, intersectionArchiveKey, ArrayCloneUtil.cloneParams(args));
+            Object count = invoke(countMethod, item, ArrayCloneUtil.cloneParams(args));
 
             countMap.put(item, Objects.isNull(count) ? 0 : (Integer) count);
         }
@@ -178,7 +178,7 @@ public class MapReduceProxy implements InvocationHandler {
             if (Objects.isNull(clonedParams)) {
                 continue;
             }
-            Object result = invoke(method, archiveKeyResolver, mapReduceAble, intersectionArchiveKey, clonedParams);
+            Object result = invoke(method, mapReduceAble, clonedParams);
             map.put(mapReduceAble, result);
         }
 
@@ -190,12 +190,10 @@ public class MapReduceProxy implements InvocationHandler {
      * 执行请求
      *
      * @param executedParams     原始参数
-     * @param archiveKeyResolver 归档参数处理器
      * @param originalArchiveKey 原始归档参数
      * @param target             invoke 的 target
      */
     private Object doExecute(Method method, Object[] executedParams,
-                             ArchiveKeyResolver archiveKeyResolver,
                              ArchiveKey originalArchiveKey,
                              MapReduceAble target) {
 
@@ -207,15 +205,13 @@ public class MapReduceProxy implements InvocationHandler {
         }
 
         // 根据归档键 交集 重构 方法参数
-        return invoke(method, archiveKeyResolver, target, intersectionArchiveKey, executedParams);
+        return invoke(method, target, executedParams);
     }
 
 
-    private Object invoke(Method method, ArchiveKeyResolver archiveKeyResolver,
-                          MapReduceAble mapReduceAble, ArchiveKey intersectionArchiveKey,
-                          Object[] clonedParams) {
-        // 根据归档键 交集 重构 方法参数
-        Object[] params = archiveKeyResolver.rebuild(intersectionArchiveKey, clonedParams);
+    private Object invoke(Method method,
+                          MapReduceAble mapReduceAble,
+                          Object[] params) {
         try {
             return method.invoke(mapReduceAble, params);
         } catch (IllegalAccessException e) {

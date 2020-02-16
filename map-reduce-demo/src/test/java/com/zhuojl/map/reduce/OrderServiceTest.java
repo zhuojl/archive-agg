@@ -4,7 +4,7 @@ import com.zhuojl.map.reduce.dto.OrderPageDTO;
 import com.zhuojl.map.reduce.dto.OrderQueryDTO;
 import com.zhuojl.map.reduce.model.GroupBySth;
 import com.zhuojl.map.reduce.model.OrderStatistic;
-import com.zhuojl.map.reduce.service.OrderService;
+import com.zhuojl.map.reduce.service.order.OrderService;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -56,7 +56,7 @@ public class OrderServiceTest {
         Assert.assertEquals(2, orderQueryDTO.getLow().intValue());
         Assert.assertEquals(5, orderQueryDTO.getHigh().intValue());
         Assert.assertNotNull(count);
-        Assert.assertEquals(2, count.intValue());
+        Assert.assertEquals(6, count.intValue());
     }
 
 

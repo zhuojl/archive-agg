@@ -1,15 +1,16 @@
-package com.zhuojl.map.reduce.service;
+package com.zhuojl.map.reduce.service.order;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 
-import com.zhuojl.map.reduce.OrderArchiveKey;
+import com.zhuojl.map.reduce.SystemArchiveKey;
 import com.zhuojl.map.reduce.dto.OrderPageDTO;
 import com.zhuojl.map.reduce.dto.OrderQueryDTO;
 import com.zhuojl.map.reduce.model.GroupBySth;
 import com.zhuojl.map.reduce.model.Order;
 import com.zhuojl.map.reduce.model.OrderStatistic;
 
+import org.springframework.core.Ordered;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -18,65 +19,80 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 从mongo查询订单
+ * 从mysql查询订单
  *
  * @author zhuojl
  */
 @Service
 @Slf4j
-public class MongoOrderServiceImpl implements OrderService {
+public class MySqlOrderServiceImpl1 implements OrderService, Ordered {
+
 
     @Override
-    public OrderArchiveKey getArchiveKey() {
-        return new OrderArchiveKey(Range.closed(1, 3));
+    public int getOrder() {
+        return 1;
+    }
+
+    @Override
+    public SystemArchiveKey getArchiveKey() {
+        return new SystemArchiveKey(Range.closed(4, 7));
     }
 
     @Override
     public List<Order> listByMultiParam(String creator, Integer start, Integer end) {
-        log.info("mongo creator : {},{}.{}", creator, start, end);
+        log.info("mysql creator : {},{}.{}", creator, start, end);
         List<Order> orders = new ArrayList<>();
         orders.add(Order.builder()
                 .orderId(1L)
                 .amount(100L)
-                .creator("mongo : " + creator)
+                .creator("mysql : " + creator)
                 .build());
         return orders;
     }
 
     @Override
     public List<Order> listByDTO(OrderQueryDTO orderQueryDTO) {
-        log.info("mongo listByDTO : {}", orderQueryDTO);
+        log.info("mysql listByDTO : {}", orderQueryDTO);
         List<Order> orders = new ArrayList<>();
         orders.add(Order.builder()
                 .orderId(1L)
                 .amount(100L)
-                .creator("mongo : " + orderQueryDTO.getCreator())
+                .creator("mysql : " + orderQueryDTO.getCreator())
                 .build());
         return orders;
     }
 
-
     @Override
     public Integer getOrderCount(OrderQueryDTO orderQueryDTO) {
-        log.info("mongo count: {}", orderQueryDTO.getHigh() - orderQueryDTO.getLow());
+        log.info("mysql count: {}", orderQueryDTO.getHigh() - orderQueryDTO.getLow());
         return orderQueryDTO.getHigh() - orderQueryDTO.getLow();
     }
 
     @Override
     public OrderStatistic statistic(OrderQueryDTO orderQueryDTO) {
-        return new OrderStatistic("mongo", 1, 1);
+        return new OrderStatistic("mysql", 2, 3);
     }
 
     @Override
     public List<GroupBySth> listGroupBy(OrderQueryDTO orderQueryDTO) {
-        return Lists.newArrayList(new GroupBySth(2, 1), new GroupBySth(4, 2));
+        return Lists.newArrayList(new GroupBySth(2, 2), new GroupBySth(3, 2));
     }
 
     @Override
     public OrderStatistic findFirst(OrderQueryDTO orderQueryDTO) {
-        return new OrderStatistic("mongo", 1, 1);
+        log.info("return null although order is higher");
+        return null;
     }
 
+
+    /**
+     * 模拟测试， 实际查询时是根据start和limit查询的，在
+     *
+     * {@link com.zhuojl.map.reduce.config.MapReduceProxy.MapReducePageAdjuster#adjustParam(
+     *java.lang.Integer, java.lang.Object[])}
+     *
+     * 中，处理了start和limit
+     */
     @Override
     public OrderPageDTO page(OrderPageDTO orderQueryDTO) {
         OrderPageDTO orderPageDTO = new OrderPageDTO();
@@ -89,7 +105,7 @@ public class MongoOrderServiceImpl implements OrderService {
         for (int i = intersection.upperEndpoint() - start; i >= intersection.lowerEndpoint(); i--) {
             list.add("index:" + i);
         }
-        log.info("order:{}, list:{}", "mongo", list);
+        log.info("order:{}, list:{}", getOrder(), list);
         orderPageDTO.setData(list);
         return orderPageDTO;
     }

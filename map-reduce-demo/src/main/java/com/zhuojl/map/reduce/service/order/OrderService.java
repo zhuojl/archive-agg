@@ -1,10 +1,12 @@
-package com.zhuojl.map.reduce.service;
+package com.zhuojl.map.reduce.service.order;
 
 import com.google.common.collect.Range;
 
 import com.zhuojl.map.reduce.MapReduceAble;
-import com.zhuojl.map.reduce.OrderArchiveKey;
+import com.zhuojl.map.reduce.SpElExpressionKeyResolver;
+import com.zhuojl.map.reduce.SystemArchiveKey;
 import com.zhuojl.map.reduce.annotation.MapReduce;
+import com.zhuojl.map.reduce.annotation.SpelArchiveKeyExpression;
 import com.zhuojl.map.reduce.annotation.MapReduceMethodConfig;
 import com.zhuojl.map.reduce.archivekey.ArchiveKeyResolver;
 import com.zhuojl.map.reduce.common.enums.ExecuteMode;
@@ -16,6 +18,7 @@ import com.zhuojl.map.reduce.model.OrderStatistic;
 
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.Method;
 import java.util.List;
 
 /**
@@ -24,7 +27,7 @@ import java.util.List;
  * @author zhuojl
  */
 @MapReduce
-public interface OrderService extends MapReduceAble<OrderArchiveKey> {
+public interface OrderService extends MapReduceAble<SystemArchiveKey> {
 
     String SIMPLE_HANDLER = "orderService.CustomArchiveKeyResolver";
     String ORDER_QUERY_HANDLER = "orderService.ObjectParamHandler.OrderQueryDTO";
@@ -34,14 +37,17 @@ public interface OrderService extends MapReduceAble<OrderArchiveKey> {
     /**
      * 根据创建人查询订单，从多个简单参数中获取参数
      */
-    @MapReduceMethodConfig(paramHandler = SIMPLE_HANDLER)
+    @MapReduceMethodConfig(paramHandler = SpElExpressionKeyResolver.SPEL_EXPRESSION_RESOLVER)
+    @SpelArchiveKeyExpression(high = "#high", low = "#low")
     List<Order> listByMultiParam(String creator, Integer low, Integer high);
 
 
     /**
      * 根据创建人查询订单，从实体对象中获取参数
+     *
      */
-    @MapReduceMethodConfig(paramHandler = ORDER_QUERY_HANDLER)
+    @MapReduceMethodConfig(paramHandler = SpElExpressionKeyResolver.SPEL_EXPRESSION_RESOLVER)
+    @SpelArchiveKeyExpression(high = "#orderQueryDTO.high", low = "#orderQueryDTO.low")
     List<Order> listByDTO(OrderQueryDTO orderQueryDTO);
 
 
@@ -84,19 +90,19 @@ public interface OrderService extends MapReduceAble<OrderArchiveKey> {
      * 定制 简单参数处理类
      */
     @Component(SIMPLE_HANDLER)
-    class CustomArchiveKeyResolver implements ArchiveKeyResolver<OrderArchiveKey> {
+    class CustomArchiveKeyResolver implements ArchiveKeyResolver<SystemArchiveKey> {
         @Override
-        public OrderArchiveKey extract(Object... params) {
+        public SystemArchiveKey extract(Method method, Object... params) {
 
             Range<Integer> range = Range.closed(Integer.valueOf(String.valueOf(params[1])),
                     Integer.valueOf(String.valueOf(params[2])));
 
-            return new OrderArchiveKey(range);
+            return new SystemArchiveKey(range);
 
         }
 
         @Override
-        public Object[] rebuild(OrderArchiveKey archiveKey, Object... params) {
+        public Object[] rebuild(SystemArchiveKey archiveKey, Object... params) {
             params[1] = archiveKey.getRange().lowerEndpoint();
             params[2] = archiveKey.getRange().upperEndpoint();
             return params;
@@ -107,15 +113,15 @@ public interface OrderService extends MapReduceAble<OrderArchiveKey> {
      * 定制 实体参数处理
      */
     @Component(ORDER_QUERY_HANDLER)
-    class OrderQueryDTOCustomParamHandler implements ArchiveKeyResolver<OrderArchiveKey> {
+    class OrderQueryDTOCustomParamHandler implements ArchiveKeyResolver<SystemArchiveKey> {
         @Override
-        public OrderArchiveKey extract(Object... params) {
+        public SystemArchiveKey extract(Method method, Object... params) {
             OrderQueryDTO orderQueryDTO = (OrderQueryDTO) params[0];
-            return new OrderArchiveKey(Range.closed(orderQueryDTO.getLow(), orderQueryDTO.getHigh()));
+            return new SystemArchiveKey(Range.closed(orderQueryDTO.getLow(), orderQueryDTO.getHigh()));
         }
 
         @Override
-        public Object[] rebuild(OrderArchiveKey archiveKey, Object... params) {
+        public Object[] rebuild(SystemArchiveKey archiveKey, Object... params) {
             OrderQueryDTO orderQueryDTO = (OrderQueryDTO) params[0];
             orderQueryDTO.setLow(archiveKey.getRange().lowerEndpoint());
             orderQueryDTO.setHigh(archiveKey.getRange().upperEndpoint());
@@ -127,15 +133,15 @@ public interface OrderService extends MapReduceAble<OrderArchiveKey> {
      * 定制 实体参数处理
      */
     @Component(ORDER_PAGE_HANDLER)
-    class OrderPageDTOCustomParamHandler implements ArchiveKeyResolver<OrderArchiveKey> {
+    class OrderPageDTOCustomParamHandler implements ArchiveKeyResolver<SystemArchiveKey> {
         @Override
-        public OrderArchiveKey extract(Object... params) {
+        public SystemArchiveKey extract(Method method, Object... params) {
             OrderPageDTO orderQueryDTO = (OrderPageDTO) params[0];
-            return new OrderArchiveKey(Range.closed(orderQueryDTO.getLow(), orderQueryDTO.getHigh()));
+            return new SystemArchiveKey(Range.closed(orderQueryDTO.getLow(), orderQueryDTO.getHigh()));
         }
 
         @Override
-        public Object[] rebuild(OrderArchiveKey archiveKey, Object... params) {
+        public Object[] rebuild(SystemArchiveKey archiveKey, Object... params) {
             OrderPageDTO orderQueryDTO = (OrderPageDTO) params[0];
             orderQueryDTO.setLow(archiveKey.getRange().lowerEndpoint());
             orderQueryDTO.setHigh(archiveKey.getRange().upperEndpoint());
