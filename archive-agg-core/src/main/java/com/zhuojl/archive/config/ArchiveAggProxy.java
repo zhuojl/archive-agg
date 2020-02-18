@@ -1,6 +1,6 @@
 package com.zhuojl.archive.config;
 
-import com.zhuojl.archive.MapReduceAble;
+import com.zhuojl.archive.ArchiveAggAble;
 import com.zhuojl.archive.annotation.ArchiveAggMethodConfig;
 import com.zhuojl.archive.archivekey.ArchiveKey;
 import com.zhuojl.archive.archivekey.ArchiveKeyResolver;
@@ -31,11 +31,11 @@ import lombok.extern.slf4j.Slf4j;
 public class ArchiveAggProxy implements InvocationHandler {
 
     public static final String COUNT = "Count";
-    private final List<MapReduceAble> list;
+    private final List<ArchiveAggAble> list;
     private final Map<String, ArchiveKeyResolver> map;
     private final Map<String, Aggregator> reduceMap;
 
-    public ArchiveAggProxy(List<MapReduceAble> list, Map<String, ArchiveKeyResolver> map, Map<String, Aggregator> reduceMap) {
+    public ArchiveAggProxy(List<ArchiveAggAble> list, Map<String, ArchiveKeyResolver> map, Map<String, Aggregator> reduceMap) {
         this.list = list;
         this.map = map;
         this.reduceMap = reduceMap;
@@ -97,7 +97,7 @@ public class ArchiveAggProxy implements InvocationHandler {
                 throw new MyRuntimeException("page method with error return type");
             }
 
-            List<MapReduceAble> filteredList = list.stream()
+            List<ArchiveAggAble> filteredList = list.stream()
                     .filter(item -> filter(item, originalArchiveKey))
                     .collect(Collectors.toList());
 
@@ -107,7 +107,7 @@ public class ArchiveAggProxy implements InvocationHandler {
             }
 
             // 便利执行 计数方法 返回 类全名，每区块计数器
-            Map<MapReduceAble, Integer> countMap = getCountMap(filteredList, method, args);
+            Map<ArchiveAggAble, Integer> countMap = getCountMap(filteredList, method, args);
             Integer count = countMap.values().stream().reduce(Integer::sum).orElse(0);
             if (count == 0) {
                 // XXX 如果没有则返回 reduce查询原始对象/或者clone对象，当然这样可能会有问题
@@ -115,7 +115,7 @@ public class ArchiveAggProxy implements InvocationHandler {
             }
 
             // 执行结果
-            Map<MapReduceAble, Object> resultMap = getResultMap(filteredList, method, args, archiveAggPage, countMap);
+            Map<ArchiveAggAble, Object> resultMap = getResultMap(filteredList, method, args, archiveAggPage, countMap);
 
             Object obj = list.stream()
                     .filter(item -> countMap.containsKey(item) && resultMap.containsKey(item))
@@ -147,8 +147,8 @@ public class ArchiveAggProxy implements InvocationHandler {
         return archiveAggPage;
     }
 
-    private Map<MapReduceAble, Integer> getCountMap(List<MapReduceAble> filteredList, Method method,
-                                                    Object[] args) {
+    private Map<ArchiveAggAble, Integer> getCountMap(List<ArchiveAggAble> filteredList, Method method,
+                                                     Object[] args) {
 
         Method countMethod;
         try {
@@ -158,8 +158,8 @@ public class ArchiveAggProxy implements InvocationHandler {
             throw new MyRuntimeException("page count method is needed for this method");
         }
 
-        Map<MapReduceAble, Integer> countMap = new HashMap<>(filteredList.size());
-        for (MapReduceAble item : filteredList) {
+        Map<ArchiveAggAble, Integer> countMap = new HashMap<>(filteredList.size());
+        for (ArchiveAggAble item : filteredList) {
             Object count = doExecute(countMethod, item, args);
             countMap.put(item, Objects.isNull(count) ? 0 : (Integer) count);
         }
@@ -167,25 +167,25 @@ public class ArchiveAggProxy implements InvocationHandler {
 
     }
 
-    private Map<MapReduceAble, Object> getResultMap(List<MapReduceAble> filteredList,
-                                                    Method method, Object[] args,
-                                                    ArchiveAggPage archiveAggPage,
-                                                    Map<MapReduceAble, Integer> countMap) {
+    private Map<ArchiveAggAble, Object> getResultMap(List<ArchiveAggAble> filteredList,
+                                                     Method method, Object[] args,
+                                                     ArchiveAggPage archiveAggPage,
+                                                     Map<ArchiveAggAble, Integer> countMap) {
 
-        Map<MapReduceAble, Object> resultMap = new HashMap<>();
+        Map<ArchiveAggAble, Object> resultMap = new HashMap<>();
 
         // adjust Page Params(start, limit)
         ArchiveAggPageAdjuster archiveAggPageAdjuster = new ArchiveAggPageAdjuster(archiveAggPage);
 
-        for (MapReduceAble mapReduceAble : filteredList) {
+        for (ArchiveAggAble archiveAggAble : filteredList) {
 
-            Object[] adjustParam = archiveAggPageAdjuster.adjustParam(countMap.get(mapReduceAble), args);
+            Object[] adjustParam = archiveAggPageAdjuster.adjustParam(countMap.get(archiveAggAble), args);
 
             if (Objects.isNull(adjustParam)) {
                 continue;
             }
-            Object result = doExecute(method, mapReduceAble, adjustParam);
-            resultMap.put(mapReduceAble, result);
+            Object result = doExecute(method, archiveAggAble, adjustParam);
+            resultMap.put(archiveAggAble, result);
         }
 
         return resultMap;
@@ -195,13 +195,13 @@ public class ArchiveAggProxy implements InvocationHandler {
     /**
      * 执行请求
      *
-     * @param mapReduceAble      invoke 的 target
+     * @param archiveAggAble      invoke 的 target
      * @param executedParams     原始参数
      */
-    private Object doExecute(Method method, MapReduceAble mapReduceAble, Object[] executedParams) {
+    private Object doExecute(Method method, ArchiveAggAble archiveAggAble, Object[] executedParams) {
 
         try {
-            return method.invoke(mapReduceAble, executedParams);
+            return method.invoke(archiveAggAble, executedParams);
         } catch (IllegalAccessException e) {
             log.error("IllegalAccessException ", e);
             throw new MyRuntimeException("c");
@@ -213,10 +213,10 @@ public class ArchiveAggProxy implements InvocationHandler {
 
     }
 
-    private boolean filter(MapReduceAble mapReduceAble, ArchiveKey originalArchiveKey) {
+    private boolean filter(ArchiveAggAble archiveAggAble, ArchiveKey originalArchiveKey) {
 
         // 类配置是否和查询有交集
-        return Objects.nonNull(mapReduceAble.intersectionArchiveKey(originalArchiveKey));
+        return Objects.nonNull(archiveAggAble.intersectionArchiveKey(originalArchiveKey));
     }
 
 

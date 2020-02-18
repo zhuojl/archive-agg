@@ -9,7 +9,7 @@ import com.zhuojl.archive.archivekey.ArchiveKey;
  * XXX 本来是想通过注解中配置枚举来做，但是注解配置在接口中，无法识别子类！！
  * @author zhuojl
  */
-public interface MapReduceAble<K extends ArchiveKey> {
+public interface ArchiveAggAble<K extends ArchiveKey> {
 
     /**
      * 每个配置的归档键

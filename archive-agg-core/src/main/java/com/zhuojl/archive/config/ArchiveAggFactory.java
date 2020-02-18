@@ -1,6 +1,6 @@
 package com.zhuojl.archive.config;
 
-import com.zhuojl.archive.MapReduceAble;
+import com.zhuojl.archive.ArchiveAggAble;
 import com.zhuojl.archive.archivekey.ArchiveKeyResolver;
 import com.zhuojl.archive.agg.Aggregator;
 
@@ -37,12 +37,12 @@ public class ArchiveAggFactory implements FactoryBean, BeanClassLoaderAware, App
 
         Map<String, ArchiveKeyResolver> map = applicationContext.getBeansOfType(ArchiveKeyResolver.class);
         Map<String, Aggregator> reduceMap = applicationContext.getBeansOfType(Aggregator.class);
-        List<MapReduceAble> list = Arrays.stream(testInterfaces)
+        List<ArchiveAggAble> list = Arrays.stream(testInterfaces)
                 // 因为代理bean使用的就是这个名字（在register时指定），需要排除自己引用自己。
                 .filter(beanName -> !beanName.equals(type.getName()))
                 .map(beanName -> {
                     Object bean = applicationContext.getBean(beanName);
-                    return (MapReduceAble)bean;
+                    return (ArchiveAggAble)bean;
                 })
                 // 排序主要用于确认优先级
                 .sorted((o1, o2) -> o2.getArchiveKey().getOrder() - o1.getArchiveKey().getOrder())

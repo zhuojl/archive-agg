@@ -2,7 +2,7 @@ package com.zhuojl.archive.demo.service.order;
 
 import com.google.common.collect.Range;
 
-import com.zhuojl.archive.MapReduceAble;
+import com.zhuojl.archive.ArchiveAggAble;
 import com.zhuojl.archive.demo.annotation.SpelArchiveKeyExpression;
 import com.zhuojl.archive.common.enums.ExecuteMode;
 import com.zhuojl.archive.demo.model.GroupBySth;
@@ -27,7 +27,7 @@ import java.util.List;
  * @author zhuojl
  */
 @ArchiveAgg
-public interface OrderService extends MapReduceAble<SystemArchiveKey> {
+public interface OrderService extends ArchiveAggAble<SystemArchiveKey> {
 
     String SIMPLE_HANDLER = "orderService.CustomArchiveKeyResolver";
     String ORDER_QUERY_HANDLER = "orderService.ObjectParamHandler.OrderQueryDTO";
