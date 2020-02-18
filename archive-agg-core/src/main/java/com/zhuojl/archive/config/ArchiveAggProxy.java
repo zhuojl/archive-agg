@@ -1,13 +1,14 @@
 package com.zhuojl.archive.config;
 
 import com.zhuojl.archive.ArchiveAggAble;
+import com.zhuojl.archive.agg.Aggregator;
+import com.zhuojl.archive.agg.DefaultAggregator;
 import com.zhuojl.archive.annotation.ArchiveAggMethodConfig;
 import com.zhuojl.archive.archivekey.ArchiveKey;
 import com.zhuojl.archive.archivekey.ArchiveKeyResolver;
 import com.zhuojl.archive.common.ArchiveAggPage;
 import com.zhuojl.archive.common.enums.ExecuteMode;
 import com.zhuojl.archive.common.exception.MyRuntimeException;
-import com.zhuojl.archive.agg.Aggregator;
 
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.util.CollectionUtils;
@@ -223,7 +224,7 @@ public class ArchiveAggProxy implements InvocationHandler {
 
     private Aggregator extractReducer(ArchiveAggMethodConfig sharding) {
         String resultReducerBeanName = Strings.isBlank(sharding.aggregate()) ?
-                Aggregator.DefaultAggregator.BEAN_NAME : sharding.aggregate();
+                DefaultAggregator.BEAN_NAME : sharding.aggregate();
 
         Aggregator aggregator = reduceMap.get(resultReducerBeanName);
         Objects.requireNonNull(aggregator);
