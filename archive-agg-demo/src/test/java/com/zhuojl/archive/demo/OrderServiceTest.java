@@ -129,9 +129,7 @@ public class OrderServiceTest {
         orderPageDTO.setPageSize(3);
 
         OrderPageDTO page = orderService.page(orderPageDTO);
-        Assert.assertNotNull(page);
-        Assert.assertEquals(0, page.getTotalCount());
-        Assert.assertEquals(0, page.getData().size());
+        Assert.assertEquals(null, page);
     }
 
 
